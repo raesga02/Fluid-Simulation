@@ -190,7 +190,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displaySize: 0.5
   particleMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
-  particleMaterial: {fileID: 10302, guid: 0000000000000000f000000000000000, type: 0}
+  particleMaterial: {fileID: 2100000, guid: 29599fc94c4e4f74890f3184d2d275bd, type: 2}
 --- !u!114 &734064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -237,7 +237,7 @@ MonoBehaviour:
   spawnCentre: {x: 0, y: 0}
   spawnSize: 5
   drawSpawnBounds: 1
-  numParticlesPerAxis: 5
+  numParticlesPerAxis: 20
   initialVelocity: {x: 0, y: 0}
 --- !u!4 &474069263
 Transform:
@@ -314,8 +314,8 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 0
-  orthographic size: 5
+  orthographic: 1
+  orthographic size: 10.955177
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
