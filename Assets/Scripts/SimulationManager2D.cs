@@ -17,8 +17,11 @@ public class SimulationManager2D : MonoBehaviour {
     [SerializeField] FluidUpdater2D fluidUpdater;
     [SerializeField] FluidRenderer2D fluidRenderer;
 
+    // Compute buffers
+    public ComputeBuffer positionsBuffer { get; private set; }
 
-    FluidInitializer2D.FluidData fluidData;
+
+    public FluidInitializer2D.FluidData fluidData;
 
 
     void Awake() {
@@ -32,6 +35,16 @@ public class SimulationManager2D : MonoBehaviour {
 
     void Start() {
         fluidData = fluidSpawner.InitializeFluid();
+        numParticles = fluidData.positions.Length;
+
+        // Create the compute buffers
+        positionsBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
+
+        // Set the initial data of the compute buffers
+        positionsBuffer.SetData(fluidData.positions);
+
+        // Initialize other modules
+        fluidRenderer.Init();
     }
 
     void FixedUpdate() {
@@ -44,6 +57,10 @@ public class SimulationManager2D : MonoBehaviour {
 
     void Update() {
         fluidRenderer.RenderFluid();
+    }
+
+    void OnDestroy() {
+        positionsBuffer.Release();
     }
 
     void OnDrawGizmos() {

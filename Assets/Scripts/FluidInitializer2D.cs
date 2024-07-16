@@ -2,8 +2,6 @@ using UnityEngine;
 
 public class FluidInitializer2D : MonoBehaviour {
 
-    SimulationManager2D manager;
-
     [Header("Spawner Settings")]
     [SerializeField] Vector2 spawnCentre = Vector2.zero;
     [SerializeField] float spawnSize = 10f;
@@ -18,9 +16,7 @@ public class FluidInitializer2D : MonoBehaviour {
         public Vector2[] velocities;
     }
 
-    void Awake() {
-        manager = SimulationManager2D.Instance;
-    }
+
 
     public FluidData InitializeFluid() {
 
@@ -28,12 +24,10 @@ public class FluidInitializer2D : MonoBehaviour {
         Vector2[] positions = new Vector2[numParticles];
         Vector2[] velocities = new Vector2[numParticles];
 
-        manager.numParticles = numParticles;
-
         int i = 0;
         for (int x = 0; x < numParticlesPerAxis; x++) {
             for (int y = 0; y < numParticlesPerAxis; y++) {
-                float spaceDivision = spawnSize / (numParticles - 1);
+                float spaceDivision = spawnSize / (numParticlesPerAxis - 1);
 
                 float posX = x * spaceDivision - spawnSize * 0.5f;
                 float posY = y * spaceDivision - spawnSize * 0.5f;
