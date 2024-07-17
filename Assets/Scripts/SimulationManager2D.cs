@@ -20,7 +20,6 @@ public class SimulationManager2D : MonoBehaviour {
     // Compute buffers
     public ComputeBuffer positionsBuffer { get; private set; }
 
-
     public FluidInitializer2D.FluidData fluidData;
 
 

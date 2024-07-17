@@ -1,6 +1,7 @@
 Shader "Custom/FluidParticle"{
     Properties {
-        
+        _ScaleFactor ("Scale Factor", Float) = 1.0
+        _Color ("Particle Color", Color) = (0.1, 0.3, 1, 1)
     }
     SubShader {
         Tags { "RenderType"="Opaque" }
@@ -13,35 +14,38 @@ Shader "Custom/FluidParticle"{
 
             #include "UnityCG.cginc"
 
-            // Input data
-            StructuredBuffer<float2> Positions;
+            // Shader properties (Common data)
+            float _ScaleFactor;
+            float4 _Color;
 
-            float displayScale = 0.5;
+            // Structured buffers (Per instance data)
+            StructuredBuffer<float2> Positions;
 
             struct MeshData {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
-                // float3 normals : NORMAL;
-                // float4 tangent : TANGENT;
-                // float4 color : COLOR;
             };
 
             struct Interpolators {
-                float4 vertex : SV_POSITION; // clip-space position
-                // float2 uv : TEXCOORD0;
+                float4 position : SV_POSITION;
+                float4 color : COLOR;
             };
 
 
             Interpolators vert (MeshData v, uint instanceID : SV_InstanceID) {
                 Interpolators o;
-                float2 particleCentre = Positions[instanceID];
-                float4 finalPos = float4(particleCentre.xy, 0.0, 0.0) + v.vertex;
-                o.vertex = UnityObjectToClipPos(finalPos); // * model view matrix, local space -> clip space
+                float2 world_ParticleCentre = Positions[instanceID];
+                float2 world_VertPos = world_ParticleCentre + mul(unity_ObjectToWorld, v.vertex * _ScaleFactor);
+                float2 local_VertPos = mul(unity_WorldToObject, world_VertPos);
+                
+                o.position = UnityObjectToClipPos(float3(local_VertPos.xy, 0));
+                o.color = _Color;
+
                 return o;
             }
 
             float4 frag (Interpolators i) : SV_Target {
-                return float4(0.1, 0.3, 1, 1);
+                return i.color;
             }
             ENDCG
         }

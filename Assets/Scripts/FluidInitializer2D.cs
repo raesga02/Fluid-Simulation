@@ -17,10 +17,9 @@ public class FluidInitializer2D : MonoBehaviour {
     }
 
 
-
     public FluidData InitializeFluid() {
 
-        int numParticles = numParticlesPerAxis * numParticlesPerAxis * numParticlesPerAxis;
+        int numParticles = numParticlesPerAxis * numParticlesPerAxis;
         Vector2[] positions = new Vector2[numParticles];
         Vector2[] velocities = new Vector2[numParticles];
 
@@ -29,8 +28,8 @@ public class FluidInitializer2D : MonoBehaviour {
             for (int y = 0; y < numParticlesPerAxis; y++) {
                 float spaceDivision = spawnSize / (numParticlesPerAxis - 1);
 
-                float posX = x * spaceDivision - spawnSize * 0.5f;
-                float posY = y * spaceDivision - spawnSize * 0.5f;
+                float posX = x * spaceDivision + spawnCentre.x - spawnSize * 0.5f;
+                float posY = y * spaceDivision + spawnCentre.y - spawnSize * 0.5f;
 
                 float velX = initialVelocity.x;
                 float velY = initialVelocity.y;
@@ -46,7 +45,7 @@ public class FluidInitializer2D : MonoBehaviour {
     }
 
     void OnDrawGizmos() {
-        if (drawSpawnBounds) {
+        if (drawSpawnBounds && !Application.isPlaying) {
             var matrix = Gizmos.matrix;
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.color = Color.magenta;

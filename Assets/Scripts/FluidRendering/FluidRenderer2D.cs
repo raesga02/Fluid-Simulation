@@ -4,7 +4,8 @@ using UnityEngine;
 public class FluidRenderer2D : MonoBehaviour {
 
     [Header("Display Settings")]
-    [SerializeField] float displaySize;
+    [SerializeField, Min(0.0f)] float displaySize;
+    [SerializeField] Color particleColor;
 
     [Header("References")]
     [SerializeField] Mesh particleMesh;
@@ -14,11 +15,15 @@ public class FluidRenderer2D : MonoBehaviour {
     ComputeBuffer argsBuffer;
     Bounds bounds;
 
+
     public void Init() {
         manager = SimulationManager2D.Instance;
 
-        // Set the the position buffer on the material
+        // Set the the buffers on the material
         particleMaterial.SetBuffer("Positions", manager.positionsBuffer);
+
+        particleMaterial.SetFloat("_ScaleFactor", displaySize);
+        particleMaterial.SetColor("_Color", particleColor);
 
         // create the args buffer
         argsBuffer = GraphicsHelper.CreateArgsBuffer(particleMesh, manager.numParticles);
@@ -31,9 +36,17 @@ public class FluidRenderer2D : MonoBehaviour {
         RenderIndirect();
     }
 
-
     void RenderIndirect() {
         Graphics.DrawMeshInstancedIndirect(particleMesh, 0, particleMaterial, bounds, argsBuffer);
+    }
+
+    void OnValidate() {
+        UpdateSettings();
+    }
+
+    void UpdateSettings() {
+        particleMaterial.SetFloat("_ScaleFactor", displaySize);
+        particleMaterial.SetColor("_Color", particleColor);
     }
 
     void OnDestroy() {

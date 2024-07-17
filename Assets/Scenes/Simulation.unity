@@ -188,7 +188,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30641b8c24b978f4e8b6db795a22b299, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  displaySize: 0.5
+  displaySize: 0.24
+  particleColor: {r: 0.19691172, g: 0.3532211, b: 0.7075472, a: 0}
   particleMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   particleMaterial: {fileID: 2100000, guid: 29599fc94c4e4f74890f3184d2d275bd, type: 2}
 --- !u!114 &734064
@@ -234,8 +235,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8397a3a08d09824ab8f34167a80a108, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnCentre: {x: 0, y: 0}
-  spawnSize: 5
+  spawnCentre: {x: 2.07, y: 1.5}
+  spawnSize: 15
   drawSpawnBounds: 1
   numParticlesPerAxis: 20
   initialVelocity: {x: 0, y: 0}
