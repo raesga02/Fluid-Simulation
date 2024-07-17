@@ -1,0 +1,15 @@
+// Kernels
+#pragma kernel TimeIntegration
+
+// Shader properties (Common data)
+float _deltaTime;
+
+// Structured buffers (Per instance data)
+RWStructuredBuffer<float2> _Positions;
+RWStructuredBuffer<float2> _Velocities
+
+
+[numthreads(64, 1, 1)]
+void TimeIntegration (uint3 id : SV_DispatchThreadID) {
+    _Positions[id.x] += _Velocities[id.x] * _deltaTime;
+}
