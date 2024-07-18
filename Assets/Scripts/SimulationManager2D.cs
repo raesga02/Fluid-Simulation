@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class SimulationManager2D : MonoBehaviour {
@@ -6,6 +7,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     [Header("Settings")]
     public int numParticles;
+    public float deltaTime;
 
     [Header("Bounding Box Settings")]
     public Vector2 boundsCentre = Vector2.down;
@@ -19,9 +21,13 @@ public class SimulationManager2D : MonoBehaviour {
 
     // Compute buffers
     public ComputeBuffer positionsBuffer { get; private set; }
+    public ComputeBuffer velocitiesBuffer { get; private set; }
 
-    public FluidInitializer2D.FluidData fluidData;
+    public FluidInitializer2D.FluidData fluidInitialData;
 
+
+    // Private constructor to avoid instantiation
+    private SimulationManager2D() { }
 
     void Awake() {
         if (Instance != null && Instance != this) {
@@ -33,17 +39,21 @@ public class SimulationManager2D : MonoBehaviour {
     }
 
     void Start() {
-        fluidData = fluidSpawner.InitializeFluid();
-        numParticles = fluidData.positions.Length;
+        fluidInitialData = fluidSpawner.InitializeFluid();
+        numParticles = fluidInitialData.positions.Length;
+        deltaTime = Time.fixedDeltaTime;
 
         // Create the compute buffers
         positionsBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
+        velocitiesBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
 
         // Set the initial data of the compute buffers
-        positionsBuffer.SetData(fluidData.positions);
+        positionsBuffer.SetData(fluidInitialData.positions);
+        velocitiesBuffer.SetData(fluidInitialData.velocities);
 
         // Initialize other modules
         fluidRenderer.Init();
+        fluidUpdater.Init();
     }
 
     void FixedUpdate() {
@@ -60,6 +70,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     void OnDestroy() {
         positionsBuffer.Release();
+        velocitiesBuffer.Release();
     }
 
     void OnDrawGizmos() {

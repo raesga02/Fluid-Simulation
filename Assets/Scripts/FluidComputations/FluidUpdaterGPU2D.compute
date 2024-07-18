@@ -1,15 +1,29 @@
 // Kernels
-#pragma kernel TimeIntegration
+#pragma kernel IntegratePosition
+#pragma kernel ApplyExternalForces
 
 // Shader properties (Common data)
 float _deltaTime;
+int _numParticles;
+float _gravity;
 
 // Structured buffers (Per instance data)
 RWStructuredBuffer<float2> _Positions;
-RWStructuredBuffer<float2> _Velocities
+RWStructuredBuffer<float2> _Velocities;
 
+
+bool IndexOutOfRange(int particleIndex) {
+    return particleIndex >= _numParticles;
+}
 
 [numthreads(64, 1, 1)]
-void TimeIntegration (uint3 id : SV_DispatchThreadID) {
+void IntegratePosition(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x)) { return; }
     _Positions[id.x] += _Velocities[id.x] * _deltaTime;
+}
+
+[numthreads(64, 1, 1)]
+void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x)) { return; }
+    _Velocities[id.x] += float2(0.0, _gravity) * _deltaTime;
 }

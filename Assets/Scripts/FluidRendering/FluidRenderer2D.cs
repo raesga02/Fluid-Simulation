@@ -22,8 +22,7 @@ public class FluidRenderer2D : MonoBehaviour {
         // Set the the buffers on the material
         particleMaterial.SetBuffer("Positions", manager.positionsBuffer);
 
-        particleMaterial.SetFloat("_ScaleFactor", displaySize);
-        particleMaterial.SetColor("_Color", particleColor);
+        UpdateSettings();
 
         // create the args buffer
         argsBuffer = GraphicsHelper.CreateArgsBuffer(particleMesh, manager.numParticles);

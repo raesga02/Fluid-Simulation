@@ -154,6 +154,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   numParticles: 0
+  deltaTime: 0
   boundsCentre: {x: 0, y: 0}
   boundsSize: {x: 40, y: 20}
   drawBounds: 1
@@ -190,7 +191,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displaySize: 0.24
   particleColor: {r: 0.19691172, g: 0.3532211, b: 0.7075472, a: 0}
-  particleMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  particleMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   particleMaterial: {fileID: 2100000, guid: 29599fc94c4e4f74890f3184d2d275bd, type: 2}
 --- !u!114 &734064
 MonoBehaviour:
@@ -205,7 +206,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   particleMass: 0
-  gravity: 0
+  gravity: -9
+  computeShader: {fileID: 7200000, guid: ccae6602da871c442adf8249c2bf9b64, type: 3}
 --- !u!1 &474069261
 GameObject:
   m_ObjectHideFlags: 0
@@ -238,7 +240,7 @@ MonoBehaviour:
   spawnCentre: {x: 2.07, y: 1.5}
   spawnSize: 15
   drawSpawnBounds: 1
-  numParticlesPerAxis: 20
+  numParticlesPerAxis: 10
   initialVelocity: {x: 0, y: 0}
 --- !u!4 &474069263
 Transform:

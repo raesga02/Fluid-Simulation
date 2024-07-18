@@ -36,9 +36,9 @@ Shader "Custom/FluidParticle"{
                 Interpolators o;
                 float2 world_ParticleCentre = Positions[instanceID];
                 float2 world_VertPos = world_ParticleCentre + mul(unity_ObjectToWorld, v.vertex * _ScaleFactor);
-                float2 local_VertPos = mul(unity_WorldToObject, world_VertPos);
+                float2 object_VertPos = mul(unity_WorldToObject, world_VertPos);
                 
-                o.position = UnityObjectToClipPos(float3(local_VertPos.xy, 0));
+                o.position = UnityObjectToClipPos(float3(object_VertPos.xy, 0));
                 o.color = _Color;
 
                 return o;

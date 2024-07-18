@@ -26,4 +26,10 @@ public static class GraphicsHelper {
 
 
     // Compute shaders
+
+    public static void SetBufferKernels(ComputeShader computeShader, string name, ComputeBuffer buffer, params int[] kernelIndices) {
+        for (int i = 0; i < kernelIndices.Length; i++) {
+            computeShader.SetBuffer(kernelIndices[i], name, buffer);
+        }
+    }
 }
