@@ -34,11 +34,18 @@ Shader "Custom/FluidParticle"{
 
             Interpolators vert (MeshData v, uint instanceID : SV_InstanceID) {
                 Interpolators o;
-                float2 world_ParticleCentre = Positions[instanceID];
-                float2 world_VertPos = world_ParticleCentre + mul(unity_ObjectToWorld, v.vertex * _ScaleFactor);
-                float2 object_VertPos = mul(unity_WorldToObject, world_VertPos);
+
+                // Particle centre in world space
+                float4 world_ParticleCentre = float4(Positions[instanceID], 0, 1);
+
+                // Convert mesh vertex from object space -> world space (with scaling)
+                float4 world_finalVertPos = world_ParticleCentre + mul(unity_ObjectToWorld, _ScaleFactor * v.vertex);
+
+                // Obtain the final position of the vertex in object local space
+                float4 object_finalVertPos = mul(unity_WorldToObject, world_finalVertPos);
                 
-                o.position = UnityObjectToClipPos(float3(object_VertPos.xy, 0));
+                // Obtain the position of the vertex from object space -> clip space
+                o.position = UnityObjectToClipPos(object_finalVertPos);
                 o.color = _Color;
 
                 return o;

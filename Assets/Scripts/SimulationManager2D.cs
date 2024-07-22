@@ -7,12 +7,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     [Header("Settings")]
     public int numParticles;
-    public float deltaTime;
-
-    [Header("Bounding Box Settings")]
-    public Vector2 boundsCentre = Vector2.down;
-    public Vector2 boundsSize = Vector2.one;
-    public bool drawBounds = true;
+    [Range(0.0001f, 1 / 50f)] public float deltaTime;
 
     [Header("References")]
     [SerializeField] FluidInitializer2D fluidSpawner;
@@ -41,7 +36,7 @@ public class SimulationManager2D : MonoBehaviour {
     void Start() {
         fluidInitialData = fluidSpawner.InitializeFluid();
         numParticles = fluidInitialData.positions.Length;
-        deltaTime = Time.fixedDeltaTime;
+        Time.fixedDeltaTime = deltaTime;
 
         // Create the compute buffers
         positionsBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
@@ -71,15 +66,5 @@ public class SimulationManager2D : MonoBehaviour {
     void OnDestroy() {
         positionsBuffer.Release();
         velocitiesBuffer.Release();
-    }
-
-    void OnDrawGizmos() {
-        if (drawBounds) {
-            var matrix = Gizmos.matrix;
-            Gizmos.matrix = transform.localToWorldMatrix;
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireCube(boundsCentre, Vector2.one * boundsSize);
-            Gizmos.matrix = matrix;
-        }
     }
 }

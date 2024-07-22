@@ -3,7 +3,6 @@ using UnityEngine;
 public class FluidInitializer2D : MonoBehaviour {
 
     [Header("Spawner Settings")]
-    [SerializeField] Vector2 spawnCentre = Vector2.zero;
     [SerializeField] float spawnSize = 10f;
     [SerializeField] bool drawSpawnBounds = true;
 
@@ -28,13 +27,15 @@ public class FluidInitializer2D : MonoBehaviour {
             for (int y = 0; y < numParticlesPerAxis; y++) {
                 float spaceDivision = spawnSize / (numParticlesPerAxis - 1);
 
-                float posX = x * spaceDivision + spawnCentre.x - spawnSize * 0.5f;
-                float posY = y * spaceDivision + spawnCentre.y - spawnSize * 0.5f;
+                // Particle positions in the local space of the simulation
+                float posX = x * spaceDivision - spawnSize * 0.5f;
+                float posY = y * spaceDivision - spawnSize * 0.5f;
 
                 float velX = initialVelocity.x;
                 float velY = initialVelocity.y;
 
-                positions[i] = new Vector2(posX, posY);
+                // Particle position in world space
+                positions[i] = transform.localToWorldMatrix * new Vector4(posX, posY, 0f, 1f);
                 velocities[i] = new Vector2(velX, velY);
 
                 i++;
@@ -49,7 +50,9 @@ public class FluidInitializer2D : MonoBehaviour {
             var matrix = Gizmos.matrix;
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.color = Color.magenta;
-            Gizmos.DrawWireCube(spawnCentre, Vector2.one * spawnSize);
+            Gizmos.DrawWireCube(Vector3.zero, Vector2.one * spawnSize);
+            Gizmos.DrawLine(new Vector2(-spawnSize / 2f, 0), new Vector2(spawnSize / 2f, 0));
+            Gizmos.DrawLine(new Vector2(0, -spawnSize / 2f), new Vector2(0, spawnSize / 2f));
             Gizmos.matrix = matrix;
         }
     }

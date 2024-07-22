@@ -1,11 +1,15 @@
 // Kernels
 #pragma kernel IntegratePosition
 #pragma kernel ApplyExternalForces
+#pragma kernel HandleCollisions
 
 // Shader properties (Common data)
 float _deltaTime;
 int _numParticles;
 float _gravity;
+float _collisionDamping;
+float2 _boundsCentre;
+float2 _boundsSize;
 
 // Structured buffers (Per instance data)
 RWStructuredBuffer<float2> _Positions;
@@ -16,6 +20,20 @@ bool IndexOutOfRange(int particleIndex) {
     return particleIndex >= _numParticles;
 }
 
+float2 ReflectAndDampVelocity(float2 velocity, float2 normal) {
+    return velocity - (_collisionDamping + 1) * dot(velocity, normal) * normal;
+
+    // float2 reflectedVelocity = velocity - 2.0 * dot(velocity, normal) * normal;
+    // float2 velocityToDamp = (1 - _collisionDamping) * dot(reflectedVelocity, normal) * normal;
+    // return reflectedVelocity - velocityToDamp;
+}
+
+[numthreads(64, 1, 1)]
+void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x)) { return; }
+    _Velocities[id.x] += float2(0, _gravity) * _deltaTime;
+}
+
 [numthreads(64, 1, 1)]
 void IntegratePosition(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x)) { return; }
@@ -23,7 +41,22 @@ void IntegratePosition(uint3 id : SV_DispatchThreadID) {
 }
 
 [numthreads(64, 1, 1)]
-void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
+void HandleCollisions(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x)) { return; }
-    _Velocities[id.x] += float2(0.0, _gravity) * _deltaTime;
+
+    // Obtain the distance from the particle to the closest bounds
+    float2 boundsHalfSize = 0.5 * _boundsSize;
+    float2 distCentreToParticle = _Positions[id.x] - _boundsCentre;
+    float2 quadrant = sign(distCentreToParticle); // The quadrant of the bounds where the particle is
+    float2 dst = boundsHalfSize + quadrant * -1 * distCentreToParticle;
+    
+    if (dst.x <= 0) {
+        _Positions[id.x].x = (quadrant * boundsHalfSize + _boundsCentre).x;
+        _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], float2(-1 * quadrant.x, 0));
+    }
+
+    if (dst.y <= 0) {
+        _Positions[id.x].y = (quadrant * boundsHalfSize + _boundsCentre).y;
+        _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], float2(0, -1 * quadrant.y));
+    }
 }
