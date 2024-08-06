@@ -7,6 +7,10 @@ public class FluidUpdater2D : MonoBehaviour {
     [SerializeField] float gravity = -9.81f;
     [SerializeField, Range(0f, 1f)] float collisionDamping = 0.95f;
 
+    [Header("Density Calculation Settings")]
+    [SerializeField, Min(0f)] float kernelSupportRadius;
+    [SerializeField, Min(0f)] float smoothingLength;
+
     [Header("Bounding Box Settings")]
     public Vector2 boundsCentre = Vector2.zero;
     public Vector2 boundsSize = Vector2.one;
@@ -20,6 +24,7 @@ public class FluidUpdater2D : MonoBehaviour {
     const int integratePositionKernel = 0;
     const int applyExternalForcesKernel = 1;
     const int handleCollisionsKernel = 2;
+    const int calculateDensitiesKernel = 3;
 
     // Private fields
     SimulationManager2D manager;
@@ -33,8 +38,9 @@ public class FluidUpdater2D : MonoBehaviour {
     }
 
     void SetBuffers() {
-        GraphicsHelper.SetBufferKernels(computeShader, "_Positions", manager.positionsBuffer, integratePositionKernel, handleCollisionsKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_Positions", manager.positionsBuffer, integratePositionKernel, handleCollisionsKernel, calculateDensitiesKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_Velocities", manager.velocitiesBuffer, applyExternalForcesKernel, integratePositionKernel, handleCollisionsKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_Densities", manager.densitiesBuffer, calculateDensitiesKernel);
     }
 
     void UpdateSettings() {
@@ -46,6 +52,9 @@ public class FluidUpdater2D : MonoBehaviour {
             computeShader.SetFloat("_collisionDamping", collisionDamping);
             computeShader.SetVector("_boundsCentre", boundsCentre);
             computeShader.SetVector("_boundsSize", boundsSize);
+            computeShader.SetFloat("_particleMass", particleMass);
+            computeShader.SetFloat("_kernelSupportRadius", kernelSupportRadius);
+            computeShader.SetFloat("_smoothingLength", smoothingLength);
 
             needsUpdate = false;
         }

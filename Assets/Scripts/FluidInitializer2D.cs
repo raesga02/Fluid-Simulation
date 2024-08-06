@@ -9,10 +9,12 @@ public class FluidInitializer2D : MonoBehaviour {
     [Header("Particle Spawning Settings")]
     [SerializeField] int numParticlesPerAxis = 10;
     [SerializeField] Vector2 initialVelocity = Vector2.zero;
+    [SerializeField] float initialDensity = 0.0f;
 
     public struct FluidData {
         public Vector2[] positions;
         public Vector2[] velocities;
+        public float[] densities;
     }
 
 
@@ -21,6 +23,7 @@ public class FluidInitializer2D : MonoBehaviour {
         int numParticles = numParticlesPerAxis * numParticlesPerAxis;
         Vector2[] positions = new Vector2[numParticles];
         Vector2[] velocities = new Vector2[numParticles];
+        float[] densities = new float[numParticles];
 
         int i = 0;
         for (int x = 0; x < numParticlesPerAxis; x++) {
@@ -37,12 +40,13 @@ public class FluidInitializer2D : MonoBehaviour {
                 // Particle position in world space
                 positions[i] = transform.localToWorldMatrix * new Vector4(posX, posY, 0f, 1f);
                 velocities[i] = new Vector2(velX, velY);
+                densities[i] = initialDensity;
 
                 i++;
             }
         }
 
-        return new FluidData() { positions = positions, velocities = velocities };
+        return new FluidData() { positions = positions, velocities = velocities, densities = densities };
     }
 
     void OnDrawGizmos() {

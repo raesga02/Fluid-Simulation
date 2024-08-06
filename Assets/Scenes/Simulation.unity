@@ -186,7 +186,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30641b8c24b978f4e8b6db795a22b299, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  displaySize: 0.15
+  displaySize: 0.2
   particleColor: {r: 0.19691172, g: 0.3532211, b: 0.7075472, a: 0}
   particleMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   particleMaterial: {fileID: 2100000, guid: 29599fc94c4e4f74890f3184d2d275bd, type: 2}
@@ -205,6 +205,8 @@ MonoBehaviour:
   particleMass: 1
   gravity: -9.81
   collisionDamping: 0.95
+  kernelSupportRadius: 0
+  smoothingLength: 0
   boundsCentre: {x: 0, y: 0}
   boundsSize: {x: 40, y: 20}
   drawBounds: 1
@@ -242,6 +244,7 @@ MonoBehaviour:
   drawSpawnBounds: 1
   numParticlesPerAxis: 9
   initialVelocity: {x: 0, y: 0}
+  initialDensity: 0
 --- !u!4 &474069263
 Transform:
   m_ObjectHideFlags: 0
@@ -318,7 +321,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 11
+  orthographic size: 12.8324585
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2

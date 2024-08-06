@@ -17,6 +17,7 @@ public class SimulationManager2D : MonoBehaviour {
     // Compute buffers
     public ComputeBuffer positionsBuffer { get; private set; }
     public ComputeBuffer velocitiesBuffer { get; private set; }
+    public ComputeBuffer densitiesBuffer { get; private set; }
 
     public FluidInitializer2D.FluidData fluidInitialData;
 
@@ -41,10 +42,12 @@ public class SimulationManager2D : MonoBehaviour {
         // Create the compute buffers
         positionsBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
         velocitiesBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
+        densitiesBuffer = new ComputeBuffer(numParticles, 1 * sizeof(float));
 
         // Set the initial data of the compute buffers
         positionsBuffer.SetData(fluidInitialData.positions);
         velocitiesBuffer.SetData(fluidInitialData.velocities);
+        densitiesBuffer.SetData(fluidInitialData.densities);
 
         // Initialize other modules
         fluidRenderer.Init();
@@ -66,5 +69,6 @@ public class SimulationManager2D : MonoBehaviour {
     void OnDestroy() {
         positionsBuffer.Release();
         velocitiesBuffer.Release();
+        densitiesBuffer.Release();
     }
 }
