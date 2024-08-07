@@ -8,8 +8,8 @@ public class FluidUpdater2D : MonoBehaviour {
     [SerializeField, Range(0f, 1f)] float collisionDamping = 0.95f;
 
     [Header("Density Calculation Settings")]
-    [SerializeField, Min(0f)] float kernelSupportRadius;
     [SerializeField, Min(0f)] float smoothingLength;
+    // TODO: add density kernel selection
 
     [Header("Bounding Box Settings")]
     public Vector2 boundsCentre = Vector2.zero;
@@ -48,13 +48,15 @@ public class FluidUpdater2D : MonoBehaviour {
             Time.fixedDeltaTime = manager.deltaTime;
             computeShader.SetFloat("_deltaTime", manager.deltaTime);
             computeShader.SetInt("_numParticles", manager.numParticles);
+
+            computeShader.SetFloat("_particleMass", particleMass);
             computeShader.SetFloat("_gravity", gravity);
             computeShader.SetFloat("_collisionDamping", collisionDamping);
+
+            computeShader.SetFloat("_smoothingLength", smoothingLength);
+
             computeShader.SetVector("_boundsCentre", boundsCentre);
             computeShader.SetVector("_boundsSize", boundsSize);
-            computeShader.SetFloat("_particleMass", particleMass);
-            computeShader.SetFloat("_kernelSupportRadius", kernelSupportRadius);
-            computeShader.SetFloat("_smoothingLength", smoothingLength);
 
             needsUpdate = false;
         }
@@ -63,6 +65,7 @@ public class FluidUpdater2D : MonoBehaviour {
     public void UpdateFluidState() {
         int groups = Mathf.CeilToInt(manager.numParticles / 64f);
         UpdateSettings();
+        computeShader.Dispatch(calculateDensitiesKernel, groups, 1, 1);
         computeShader.Dispatch(applyExternalForcesKernel, groups, 1, 1);
         computeShader.Dispatch(integratePositionKernel, groups, 1, 1);
         computeShader.Dispatch(handleCollisionsKernel, groups, 1, 1);

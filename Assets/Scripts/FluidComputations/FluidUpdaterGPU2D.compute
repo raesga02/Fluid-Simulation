@@ -15,7 +15,6 @@ float _collisionDamping;
 float2 _boundsCentre;
 float2 _boundsSize;
 float _particleMass;
-float _kernelSupportRadius;
 float _smoothingLength;
 
 // Structured buffers (Per instance data)
@@ -46,8 +45,7 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
 
     for (int i = 0; i < _numParticles; i++) {
         float r = length(_Positions[i] - interpolationCentre);
-        if ( r >= _kernelSupportRadius) { continue; }
-        newDensity += DensityKernel(r, _smoothingLength, _kernelSupportRadius);
+        newDensity += DensityKernel(r, _smoothingLength);
     } 
 
     _Densities[id.x] = _particleMass * newDensity;
