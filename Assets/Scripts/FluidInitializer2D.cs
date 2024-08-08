@@ -8,7 +8,9 @@ public class FluidInitializer2D : MonoBehaviour {
 
     [Header("Particle Spawning Settings")]
     [SerializeField] int numParticlesPerAxis = 10;
+    [SerializeField] float positionJitter = 0.01f;
     [SerializeField] Vector2 initialVelocity = Vector2.zero;
+    [SerializeField] float velocityJitter = 0.01f;
     [SerializeField] float initialDensity = 0.0f;
 
     public struct FluidData {
@@ -33,13 +35,13 @@ public class FluidInitializer2D : MonoBehaviour {
                 // Particle positions in the local space of the simulation
                 float posX = x * spaceDivision - spawnSize * 0.5f;
                 float posY = y * spaceDivision - spawnSize * 0.5f;
+                Vector2 wPos = transform.localToWorldMatrix * new Vector4(posX, posY, 0f, 1f);
 
                 float velX = initialVelocity.x;
                 float velY = initialVelocity.y;
 
-                // Particle position in world space
-                positions[i] = transform.localToWorldMatrix * new Vector4(posX, posY, 0f, 1f);
-                velocities[i] = new Vector2(velX, velY);
+                positions[i] = wPos + positionJitter * Random.insideUnitCircle;
+                velocities[i] = new Vector2(velX, velY) + velocityJitter * Random.insideUnitCircle;
                 densities[i] = initialDensity;
 
                 i++;
@@ -55,8 +57,8 @@ public class FluidInitializer2D : MonoBehaviour {
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.color = Color.magenta;
             Gizmos.DrawWireCube(Vector3.zero, Vector2.one * spawnSize);
-            Gizmos.DrawLine(new Vector2(-spawnSize / 2f, 0), new Vector2(spawnSize / 2f, 0));
-            Gizmos.DrawLine(new Vector2(0, -spawnSize / 2f), new Vector2(0, spawnSize / 2f));
+            Gizmos.DrawLine(new Vector2(-spawnSize * 0.5f, 0), new Vector2(spawnSize * 0.5f, 0));
+            Gizmos.DrawLine(new Vector2(0, -spawnSize * 0.5f), new Vector2(0, spawnSize * 0.5f));
             Gizmos.matrix = matrix;
         }
     }
