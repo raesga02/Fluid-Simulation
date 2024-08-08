@@ -21,6 +21,7 @@ public class FluidRenderer2D : MonoBehaviour {
 
         // Set the the buffers on the material
         particleMaterial.SetBuffer("Positions", manager.positionsBuffer);
+        particleMaterial.SetBuffer("Velocities", manager.velocitiesBuffer);
 
         UpdateSettings();
 

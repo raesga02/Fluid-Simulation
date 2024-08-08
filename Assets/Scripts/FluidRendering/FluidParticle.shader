@@ -20,6 +20,7 @@ Shader "Custom/FluidParticle"{
 
             // Structured buffers (Per instance data)
             StructuredBuffer<float2> Positions;
+            StructuredBuffer<float2> Velocities;
 
             struct MeshData {
                 float4 vertex : POSITION;
@@ -46,7 +47,7 @@ Shader "Custom/FluidParticle"{
                 
                 // Obtain the position of the vertex from object space -> clip space
                 o.position = UnityObjectToClipPos(object_finalVertPos);
-                o.color = _Color;
+                o.color = float4(normalize(Velocities[instanceID]), 0.5, 1.0);
 
                 return o;
             }
