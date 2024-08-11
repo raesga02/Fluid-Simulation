@@ -47,7 +47,7 @@ Shader "Custom/FluidParticle"{
                 
                 // Obtain the position of the vertex from object space -> clip space
                 o.position = UnityObjectToClipPos(object_finalVertPos);
-                o.color = float4(normalize(Velocities[instanceID]), 0.5, 1.0);
+                o.color = float4(length(Velocities[instanceID]) / 3.0, length(Velocities[instanceID]) / 1.5, 0.5, 1.0);
 
                 return o;
             }

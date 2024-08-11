@@ -45,7 +45,7 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
 
     // TODO: add neighbor search to optimise
     for (int i = 0; i < _numParticles; i++) {
-        float3 r = _Positions[i] - interpolationCentre;
+        float2 r = _Positions[i] - interpolationCentre;
         float r2 = dot(r, r);
 
         // Early discard of far away particles
