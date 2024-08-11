@@ -3,44 +3,126 @@
 
 // SPH kernels
 
+float Poly6(float r, float h) {
+    if (r >= h) { return 0.0; }
+    
+    float h2 = h * h;
+    float h4 = h2 * h2;
+    float r2 = r * r;
+    float normFactor = 315.0 / (64.0 * PI * h4 * h4 * h);
+    
+    return normFactor * (h2 - r2) * (h2 - r2) * (h2 - r2);
+}
+
 float CubicSpline(float r, float h) {
+    if (r >= h) { return 0.0; }
+
     float q = r / h;
-
-    // Check values outside support range
-    if (q >= 1.0) { return 0.0; }
-
     float q2 = q * q;
     float q3 = q2 * q;
+    float normFactor = 8.0 / (PI * h * h * h);
+    float rawKernelValue = 0.0;
 
-    // Normalization factor for 2D
-    float normFactor = 40.0 / (7.0 * PI * h * h);
-    float baseValue = 0.0;
+    if (q <= 0.5) {
+        rawKernelValue = 6.0 * (q3 - q2) + 1.0;
+    }
+    else {
+        rawKernelValue = 2.0 * (1.0 - q) * (1.0 - q) * (1.0 - q);
+    }
 
-    if (q > 0.5) {
-        baseValue = 2.0 * (1.0 - q) * (1.0 - q) * (1.0 - q);
-    }
-    else if (q > 0.0) {
-        baseValue = 6.0 * (q3 - q2) + 1.0;
-    }
-    return normFactor * baseValue;
+    return normFactor * rawKernelValue;
 }
 
-float QuinticSpline(float r, float h) {
+float Spiky(float r, float h) {
+    if (r >= h) { return 0.0; }
 
-}
+    float h2 = h * h;
+    float h6 = h2 * h2 * h2;
+    float normFactor = 15.0 / (PI * h6);
 
-float Gaussian(float r, float h) {
-
+    return normFactor * (h - r) * (h - r) * (h - r);
 }
 
 float WendlandQuinticC2(float r, float h) {
+    if (r >= h) { return 0.0; }
 
+    float q = r / h;
+    float h2 = h * h;
+    float normFactor = 21.0 / (2.0 * PI * h2 * h);
+
+    return normFactor * (1.0 - q) * (1.0 - q) * (1.0 - q) * (1.0 - q) * (4.0 * q + 1.0);
 }
 
+
+// SPH Gradient kernels
+
+float3 Poly6Gradient(float3 r, float h) {
+    float h2 = h * h;
+    float r2 = dot(r, r);
+
+    if (r2 >= h2) { return 0.0; }
+
+    float h4 = h2 * h2;
+    float normFactor = - 945.0 / (32.0 * PI * h4 * h4 * h);
+
+    return normFactor * (h2 - r2) * (h2 - r2) * r;
+}
+
+float3 CubicSplineGradient(float3 r, float h) {
+    float h2 = h * h;
+    float r2 = dot(r, r);
+
+    if (r2 >= h2) { return 0.0; }
+
+    float h3 = h2 * h;
+    float rl = sqrt(r2);
+    float q = rl / h;
+    float normFactor = 48.0 / (PI * h3);
+    float rawKernelValue = 0.0;
+
+    if (q <= 0.5) {
+        rawKernelValue = q * (3.0 * q - 2.0);
+    }
+    else {
+        rawKernelValue = - (1.0 - q) * (1.0 - q);
+    }
+
+    return normFactor * rawKernelValue * (r / (rl * h));
+}
+
+float3 SpikyGradient(float3 r, float h) {
+    float r2 = dot(r, r);
+    float h2 = h * h;
+    
+    if (r2 >= h2) { return 0.0; }
+
+    float rl = sqrt(r2);
+    float h6 = h2 * h2 * h2;
+    float normFactor = - 45.0 / (PI * h6);
+
+    return normFactor * (h - rl) * (h - rl) * (r / rl);
+}
+
+float3 WendlandQuinticC2Gradient(float3 r, float h) {
+    float r2 = dot(r, r);
+    float h2 = h * h;
+
+    if (r2 >= h2) { return 0.0; }
+
+    float h4 = h2 * h2;
+    float q = r / h;
+    float normFactor = - 210.0 / (PI * h4);
+
+    return normFactor * q * (1.0 - q) * (1.0 - q) * (1.0 - q) * (r / rl);
+}
 
 
 // SPH kernel encapsulators
 
 float DensityKernel(float r, float h) {
-    return CubicSpline(r, h);
+    return Poly6(r, h);
+}
+
+float3 DensityGradientKernel(float3 r, float h) {
+    return Poly6Gradient(r, h);
 }
