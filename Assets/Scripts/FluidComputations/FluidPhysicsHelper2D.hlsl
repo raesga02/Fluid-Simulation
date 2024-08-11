@@ -109,8 +109,9 @@ float3 WendlandQuinticC2Gradient(float3 r, float h) {
 
     if (r2 >= h2) { return 0.0; }
 
+    float rl = sqrt(r2);
     float h4 = h2 * h2;
-    float q = r / h;
+    float q = rl / h;
     float normFactor = - 210.0 / (PI * h4);
 
     return normFactor * q * (1.0 - q) * (1.0 - q) * (1.0 - q) * (r / rl);
