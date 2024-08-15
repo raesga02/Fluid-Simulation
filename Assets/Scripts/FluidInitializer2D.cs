@@ -17,6 +17,8 @@ public class FluidInitializer2D : MonoBehaviour {
         public Vector2[] positions;
         public Vector2[] velocities;
         public float[] densities;
+        public Vector2Int[] sortedSpatialHashedIndices;
+        public Vector2Int[] lookupHashIndices;
     }
 
 
@@ -26,6 +28,8 @@ public class FluidInitializer2D : MonoBehaviour {
         Vector2[] positions = new Vector2[numParticles];
         Vector2[] velocities = new Vector2[numParticles];
         float[] densities = new float[numParticles];
+        Vector2Int[] sortedSpatialHashedIndices = new Vector2Int[numParticles];
+        Vector2Int[] lookupHashIndices = new Vector2Int[2 * numParticles];
 
         int i = 0;
         for (int x = 0; x < numParticlesPerAxis; x++) {
@@ -43,12 +47,15 @@ public class FluidInitializer2D : MonoBehaviour {
                 positions[i] = wPos + positionJitter * Random.insideUnitCircle;
                 velocities[i] = new Vector2(velX, velY) + velocityJitter * Random.insideUnitCircle;
                 densities[i] = initialDensity;
+                sortedSpatialHashedIndices[i] = new Vector2Int(0, 0);
+                lookupHashIndices[i] = new Vector2Int(0, 0);
+                lookupHashIndices[i + numParticlesPerAxis * numParticlesPerAxis] = new Vector2Int(0, 0);
 
                 i++;
             }
         }
 
-        return new FluidData() { positions = positions, velocities = velocities, densities = densities };
+        return new FluidData() { positions = positions, velocities = velocities, densities = densities, sortedSpatialHashedIndices = sortedSpatialHashedIndices, lookupHashIndices = lookupHashIndices };
     }
 
     void OnDrawGizmos() {
@@ -57,8 +64,8 @@ public class FluidInitializer2D : MonoBehaviour {
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.color = Color.magenta;
             Gizmos.DrawWireCube(Vector3.zero, Vector2.one * spawnSize);
-            Gizmos.DrawLine(new Vector2(-spawnSize * 0.5f, 0), new Vector2(spawnSize * 0.5f, 0));
-            Gizmos.DrawLine(new Vector2(0, -spawnSize * 0.5f), new Vector2(0, spawnSize * 0.5f));
+            //Gizmos.DrawLine(new Vector2(-spawnSize * 0.5f, 0), new Vector2(spawnSize * 0.5f, 0));
+            //Gizmos.DrawLine(new Vector2(0, -spawnSize * 0.5f), new Vector2(0, spawnSize * 0.5f));
             Gizmos.matrix = matrix;
         }
     }

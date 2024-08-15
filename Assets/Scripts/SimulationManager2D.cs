@@ -18,6 +18,8 @@ public class SimulationManager2D : MonoBehaviour {
     public ComputeBuffer positionsBuffer { get; private set; }
     public ComputeBuffer velocitiesBuffer { get; private set; }
     public ComputeBuffer densitiesBuffer { get; private set; }
+    public ComputeBuffer sortedSpatialHashedIndicesBuffer { get; private set; }
+    public ComputeBuffer lookupHashIndicesBuffer { get; private set; }
 
     public FluidInitializer2D.FluidData fluidInitialData;
 
@@ -39,19 +41,27 @@ public class SimulationManager2D : MonoBehaviour {
         numParticles = fluidInitialData.positions.Length;
         Time.fixedDeltaTime = deltaTime;
 
-        // Create the compute buffers
+        InstantiateComputeBuffers();
+        FillComputeBuffers();
+
+        fluidRenderer.Init();
+        fluidUpdater.Init();
+    }
+
+    void InstantiateComputeBuffers() {
         positionsBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
         velocitiesBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
         densitiesBuffer = new ComputeBuffer(numParticles, 1 * sizeof(float));
+        sortedSpatialHashedIndicesBuffer = new ComputeBuffer(numParticles, 2 * sizeof(int));
+        lookupHashIndicesBuffer = new ComputeBuffer(2 * numParticles, 2 * sizeof(int));
+    }
 
-        // Set the initial data of the compute buffers
+    void FillComputeBuffers() {
         positionsBuffer.SetData(fluidInitialData.positions);
         velocitiesBuffer.SetData(fluidInitialData.velocities);
         densitiesBuffer.SetData(fluidInitialData.densities);
-
-        // Initialize other modules
-        fluidRenderer.Init();
-        fluidUpdater.Init();
+        sortedSpatialHashedIndicesBuffer.SetData(fluidInitialData.sortedSpatialHashedIndices);
+        lookupHashIndicesBuffer.SetData(fluidInitialData.lookupHashIndices);
     }
 
     void FixedUpdate() {
@@ -70,5 +80,7 @@ public class SimulationManager2D : MonoBehaviour {
         positionsBuffer.Release();
         velocitiesBuffer.Release();
         densitiesBuffer.Release();
+        sortedSpatialHashedIndicesBuffer.Release();
+        lookupHashIndicesBuffer.Release();
     }
 }

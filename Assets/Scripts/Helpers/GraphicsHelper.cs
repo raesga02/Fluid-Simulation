@@ -32,4 +32,8 @@ public static class GraphicsHelper {
             computeShader.SetBuffer(kernelIndices[i], name, buffer);
         }
     }
+
+    public static int ComputeThreadGroups1D(int numIterations) {
+        return Mathf.CeilToInt(numIterations / 64f);
+    }
 }

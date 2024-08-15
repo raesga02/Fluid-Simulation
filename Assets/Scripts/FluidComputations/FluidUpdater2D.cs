@@ -9,12 +9,17 @@ public class FluidUpdater2D : MonoBehaviour {
 
     [Header("Density Calculation Settings")]
     [SerializeField, Min(0f)] float smoothingLength;
-    // TODO: add density kernel selection
+    enum NeighborSearchMode { Naive, SpatialHash };
+    [SerializeField] NeighborSearchMode searchMode;
+
 
     [Header("Bounding Box Settings")]
     public Vector2 boundsCentre = Vector2.zero;
     public Vector2 boundsSize = Vector2.one;
-    public bool drawBounds = true;
+    [SerializeField] bool drawBounds = true;
+
+    [Header("Neighbor search Settings")]
+    [SerializeField] bool drawGrid = true;
 
     // References to compute shaders
     [Header("References")]
@@ -25,6 +30,8 @@ public class FluidUpdater2D : MonoBehaviour {
     const int applyExternalForcesKernel = 1;
     const int handleCollisionsKernel = 2;
     const int calculateDensitiesKernel = 3;
+    const int computeSpatialHashesKernel = 4;
+    const int buildSpatialHashLookupKernel = 5;
 
     // Private fields
     SimulationManager2D manager;
@@ -38,9 +45,11 @@ public class FluidUpdater2D : MonoBehaviour {
     }
 
     void SetBuffers() {
-        GraphicsHelper.SetBufferKernels(computeShader, "_Positions", manager.positionsBuffer, integratePositionKernel, handleCollisionsKernel, calculateDensitiesKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_Positions", manager.positionsBuffer, integratePositionKernel, handleCollisionsKernel, calculateDensitiesKernel, computeSpatialHashesKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_Velocities", manager.velocitiesBuffer, applyExternalForcesKernel, integratePositionKernel, handleCollisionsKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_Densities", manager.densitiesBuffer, calculateDensitiesKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_SortedSpatialHashedIndices", manager.sortedSpatialHashedIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_LookupHashIndices", manager.lookupHashIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel);
     }
 
     void UpdateSettings() {
@@ -54,6 +63,7 @@ public class FluidUpdater2D : MonoBehaviour {
             computeShader.SetFloat("_collisionDamping", collisionDamping);
 
             computeShader.SetFloat("_smoothingLength", smoothingLength);
+            computeShader.SetInt("_searchMode", (int)searchMode);
 
             computeShader.SetVector("_boundsCentre", boundsCentre);
             computeShader.SetVector("_boundsSize", boundsSize);
@@ -63,9 +73,48 @@ public class FluidUpdater2D : MonoBehaviour {
     }
 
     public void UpdateFluidState() {
-        int groups = Mathf.CeilToInt(manager.numParticles / 64f);
+        int groups = GraphicsHelper.ComputeThreadGroups1D(manager.numParticles);
         UpdateSettings();
+
+        computeShader.Dispatch(computeSpatialHashesKernel, groups, 1, 1);
+        manager.sortedSpatialHashedIndicesBuffer.GetData(manager.fluidInitialData.sortedSpatialHashedIndices);
+        System.Array.Sort(manager.fluidInitialData.sortedSpatialHashedIndices, (i1, i2) => (int)(((uint)i1[1] % (uint)(2 * manager.numParticles)) - ((uint)i2[1] % (uint)(2 * manager.numParticles))));
+        manager.sortedSpatialHashedIndicesBuffer.SetData(manager.fluidInitialData.sortedSpatialHashedIndices);
+        computeShader.Dispatch(buildSpatialHashLookupKernel, groups, 1, 1);
+
+        /*
+        // Print the sortedSpatialHashedIndices list
+        string toPrint = "sortedSpatialHashedIndices: ";
+        for (int i = 0; i < manager.numParticles; i++) {
+            toPrint += manager.fluidInitialData.sortedSpatialHashedIndices[i] + " ";
+        }
+        Debug.Log(toPrint);
+
+
+        // Get lookup array from gpu
+        manager.lookupHashIndicesBuffer.GetData(manager.fluidInitialData.lookupHashIndices);
+
+        toPrint = "lookupHashIndices:          ";
+        for (int i = 0; i < 2 * manager.numParticles; i++) {
+            toPrint += manager.fluidInitialData.lookupHashIndices[i] + " ";
+        }
+        Debug.Log(toPrint);
+        */
+
+
         computeShader.Dispatch(calculateDensitiesKernel, groups, 1, 1);
+
+        /*
+        // Print the densities computed
+        manager.densitiesBuffer.GetData(manager.fluidInitialData.densities);
+        string toPrintDensities = "Densities: (";
+        for (int i = 0; i < manager.numParticles; i++) {
+            toPrintDensities += manager.fluidInitialData.densities[i] + ", ";
+        }
+        toPrintDensities += ")";
+        Debug.Log(toPrintDensities);
+        */
+
         computeShader.Dispatch(applyExternalForcesKernel, groups, 1, 1);
         computeShader.Dispatch(integratePositionKernel, groups, 1, 1);
         computeShader.Dispatch(handleCollisionsKernel, groups, 1, 1);
@@ -91,9 +140,28 @@ public class FluidUpdater2D : MonoBehaviour {
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireCube(boundsCentre, Vector2.one * boundsSize);
-            Gizmos.DrawLine(boundsCentre - new Vector2(0, boundsSize.y / 2f), boundsCentre + new Vector2(0, boundsSize.y / 2f));
-            Gizmos.DrawLine(boundsCentre - new Vector2(boundsSize.x / 2f, 0f), boundsCentre + new Vector2(boundsSize.x / 2f, 0f));
+            //Gizmos.DrawLine(boundsCentre - new Vector2(0, boundsSize.y / 2f), boundsCentre + new Vector2(0, boundsSize.y / 2f));
+            //Gizmos.DrawLine(boundsCentre - new Vector2(boundsSize.x / 2f, 0f), boundsCentre + new Vector2(boundsSize.x / 2f, 0f));
             Gizmos.matrix = matrix;
+        }
+
+        if (drawGrid & Camera.main.orthographic) {
+            float camHeight = Camera.main.orthographicSize * 2;
+            float camWidth = camHeight * Camera.main.aspect;
+            int numLinesX = Mathf.CeilToInt((camWidth + 1) / smoothingLength) + 1;
+            int numLinesY = Mathf.CeilToInt((camHeight + 1) / smoothingLength) + 1;
+            float maxX = numLinesX / 2 * smoothingLength;
+            float maxY = numLinesY / 2 * smoothingLength;
+
+            Gizmos.color = new Color(0.25f, 0.25f, 0.25f, 0.2f);
+
+            for (float i = -numLinesX / 2; i <= numLinesX / 2; i++) {
+                Gizmos.DrawLine(new Vector2(i * smoothingLength, -maxY), new Vector2(i * smoothingLength, maxY));
+            }
+
+            for (float i = -numLinesY / 2; i <= numLinesY / 2; i++) {
+                Gizmos.DrawLine(new Vector2(-maxX, i * smoothingLength), new Vector2(maxX, i * smoothingLength));
+            }
         }
     }
 }

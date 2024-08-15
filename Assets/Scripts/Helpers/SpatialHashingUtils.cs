@@ -16,31 +16,33 @@ public static class SpatialHashingUtils {
     };
 
     // Hashing primes
-    const uint p1 = 73856093;
-    const uint p2 = 19349663;
+    const int p1 = 73856093;
+    const int p2 = 19349663;
     const uint p3 = 83492791;
 
-    public static Vector2 GetGridPosition(Vector2 position, float supportRadius) {
-        return new Vector2(Mathf.Floor(position.x / supportRadius), Mathf.Floor(position.y / supportRadius));
+    public static Vector2Int GetGridPosition(Vector2 pos, float supportRadius) {
+        return new Vector2Int(Mathf.FloorToInt(pos.x / supportRadius), Mathf.FloorToInt(pos.y / supportRadius));
     }
 
-    public static float ComputeGridHash(Vector2 gridPosition) {
-        uint[] pos = new uint[2] { (uint)gridPosition.x, (uint)gridPosition.y };
+    public static int ComputeGridHashInt(Vector2Int gridPos) {
+        return gridPos.x * p1 ^ gridPos.y * p2;
+    }
+
+    public static uint ComputeGridHashUint(Vector2Int gridPos) {
+        uint[] pos = new uint[2] { (uint)gridPos.x, (uint)gridPos.y };
         return pos[0] * p1 ^ pos[1] * p2;
     }
 
-    public static float GetKey(uint hash, uint hashSize) {
+    public static int ComputeGridHashIntSum(Vector2Int gridPos) {
+        return gridPos.x * p1 + gridPos.y * p2;
+    }
+
+    public static int GetKeyFromInt(int hash, int hashSize) {
         return hash % hashSize;
     }
 
-    // hashLookupIndices: list that has for each hash the first appearance of a particle with that hash in spatialHashIndices
-    // spatialHashIndices: list sorted by hash with each particle of that hash, contains (index, hash)
-    // _Positions: list with particle positions, not sorted
-
-    public static int GetFirstAppearanceIndex(int[] hashLookupIndices, int hash) {
-        return hashLookupIndices[hash];
+    public static int GetKeyFromUint(uint hash, uint hashSize) {
+        return (int)(hash % hashSize);
     }
-
-    public static bool MatchesCurrentHash(int hash, int targetHash) => hash == targetHash;
 
 }
