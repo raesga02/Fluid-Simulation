@@ -44,8 +44,8 @@ public class FluidInitializer2D : MonoBehaviour {
                 float velX = initialVelocity.x;
                 float velY = initialVelocity.y;
 
-                positions[i] = wPos + positionJitter * Random.insideUnitCircle;
-                velocities[i] = new Vector2(velX, velY) + velocityJitter * Random.insideUnitCircle;
+                positions[i] = wPos + positionJitter * Random.value * Random.insideUnitCircle;
+                velocities[i] = new Vector2(velX, velY) + velocityJitter * Random.value * Random.insideUnitCircle;
                 densities[i] = initialDensity;
                 sortedSpatialHashedIndices[i] = new Vector2Int(0, 0);
                 lookupHashIndices[i] = new Vector2Int(0, 0);
