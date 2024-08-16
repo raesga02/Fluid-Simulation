@@ -9,9 +9,6 @@ public class FluidUpdater2D : MonoBehaviour {
 
     [Header("Density Calculation Settings")]
     [SerializeField, Min(0f)] float smoothingLength;
-    enum NeighborSearchMode { Naive, SpatialHash };
-    [SerializeField] NeighborSearchMode searchMode;
-
 
     [Header("Bounding Box Settings")]
     public Vector2 boundsCentre = Vector2.zero;
@@ -63,7 +60,6 @@ public class FluidUpdater2D : MonoBehaviour {
             computeShader.SetFloat("_collisionDamping", collisionDamping);
 
             computeShader.SetFloat("_smoothingLength", smoothingLength);
-            computeShader.SetInt("_searchMode", (int)searchMode);
 
             computeShader.SetVector("_boundsCentre", boundsCentre);
             computeShader.SetVector("_boundsSize", boundsSize);
@@ -82,52 +78,10 @@ public class FluidUpdater2D : MonoBehaviour {
         manager.sortedSpatialHashedIndicesBuffer.SetData(manager.fluidInitialData.sortedSpatialHashedIndices);
         computeShader.Dispatch(buildSpatialHashLookupKernel, groups, 1, 1);
 
-        /*
-        // Print the sortedSpatialHashedIndices list
-        string toPrint = "sortedSpatialHashedIndices: ";
-        for (int i = 0; i < manager.numParticles; i++) {
-            toPrint += manager.fluidInitialData.sortedSpatialHashedIndices[i] + " ";
-        }
-        Debug.Log(toPrint);
-
-
-        // Get lookup array from gpu
-        manager.lookupHashIndicesBuffer.GetData(manager.fluidInitialData.lookupHashIndices);
-
-        toPrint = "lookupHashIndices:          ";
-        for (int i = 0; i < 2 * manager.numParticles; i++) {
-            toPrint += manager.fluidInitialData.lookupHashIndices[i] + " ";
-        }
-        Debug.Log(toPrint);
-        */
-
-
         computeShader.Dispatch(calculateDensitiesKernel, groups, 1, 1);
-
-        /*
-        // Print the densities computed
-        manager.densitiesBuffer.GetData(manager.fluidInitialData.densities);
-        string toPrintDensities = "Densities: (";
-        for (int i = 0; i < manager.numParticles; i++) {
-            toPrintDensities += manager.fluidInitialData.densities[i] + ", ";
-        }
-        toPrintDensities += ")";
-        Debug.Log(toPrintDensities);
-        */
-
         computeShader.Dispatch(applyExternalForcesKernel, groups, 1, 1);
         computeShader.Dispatch(integratePositionKernel, groups, 1, 1);
         computeShader.Dispatch(handleCollisionsKernel, groups, 1, 1);
-    }
-
-    void DebugPrintParticleEnergy(int particleIndex) {
-        Vector2[] pos = new Vector2[particleIndex + 1];
-        Vector2[] vel = new Vector2[particleIndex + 1];
-        manager.positionsBuffer.GetData(pos, 0, 0, particleIndex + 1);
-        manager.velocitiesBuffer.GetData(vel, 0, 0, particleIndex + 1);
-        float kineticEnergy = 0.5f * particleMass * vel[particleIndex].magnitude * vel[particleIndex].magnitude;
-        float potentialEnergy = particleMass * Mathf.Abs(gravity) * Mathf.Abs(pos[particleIndex].y + boundsSize.y / 2f);
-        Debug.Log("Kinetic: " + kineticEnergy + "  Potential: " + potentialEnergy + "  Total: " + (kineticEnergy + potentialEnergy));
     }
 
     void OnValidate() {
@@ -140,8 +94,6 @@ public class FluidUpdater2D : MonoBehaviour {
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireCube(boundsCentre, Vector2.one * boundsSize);
-            //Gizmos.DrawLine(boundsCentre - new Vector2(0, boundsSize.y / 2f), boundsCentre + new Vector2(0, boundsSize.y / 2f));
-            //Gizmos.DrawLine(boundsCentre - new Vector2(boundsSize.x / 2f, 0f), boundsCentre + new Vector2(boundsSize.x / 2f, 0f));
             Gizmos.matrix = matrix;
         }
 

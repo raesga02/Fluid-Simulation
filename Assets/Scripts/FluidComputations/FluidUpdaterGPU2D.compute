@@ -19,7 +19,6 @@ float2 _boundsCentre;
 float2 _boundsSize;
 float _particleMass;
 float _smoothingLength;
-int _searchMode;
 
 // Structured buffers (Per instance data)
 RWStructuredBuffer<float2> _Positions;
@@ -42,12 +41,11 @@ float2 ReflectAndDampVelocity(float2 velocity, float2 normal) {
 void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
-    int2 gridPos = GetGridPosition(_Positions[id.x], _smoothingLength);
-    int hash = ComputeGridHash(gridPos);
-    int key = GetSpatialIndex(hash, 2 * _numParticles);
+    int2 cellPos = GetCellPos(_Positions[id.x], _smoothingLength);
+    int hash = ComputeHash(cellPos);
     _SortedSpatialHashedIndices[id.x] = int2(id.x, hash);
 
-    // Reset values on lookupHashIndices (size = 0, first = max int)
+    // Reset lookupHashIndices (size = 0, first = max int)
     _LookupHashIndices[id.x] = int2(0, 0x7FFFFFFF);
     _LookupHashIndices[id.x + _numParticles] = int2(0, 0x7FFFFFFF);
 }
@@ -57,7 +55,7 @@ void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
     int hash = _SortedSpatialHashedIndices[id.x][1];
-    int key = GetSpatialIndex(hash, _numParticles * 2);
+    int key = GetKey(hash, _numParticles * 2);
     int candidateFirst = id.x;
 
     InterlockedAdd(_LookupHashIndices[key][0], 1);
@@ -68,64 +66,35 @@ void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
 void CalculateDensities(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
-    float2 interpolationCentre = _Positions[id.x];
-    int2 centreCellPos = GetGridPosition(interpolationCentre, _smoothingLength);
+    float2 srcPos = _Positions[id.x];
+    int2 srcCellPos = GetCellPos(srcPos, _smoothingLength);
     float kernelAcc = 0.0;
-    float debug_numComparisons = 0.0;
-    float debug_sumCellPositions = 0.0;
     
-    if (_searchMode == 0) {
-        for (int i = 0; i < _numParticles; i++) {
-            float2 r = _Positions[i] - interpolationCentre;
+    for (int i = 0; i < 9; i++) {
+        int2 nbrCellPos = srcCellPos + neighborOffsets[i];
+        int nbrHash = ComputeHash(nbrCellPos);
+        int nbrKey = GetKey(nbrHash, _numParticles * 2);
+        int2 lookupData = _LookupHashIndices[nbrKey];
+
+        if (lookupData[0] == 0) { continue; } // No particles with that key
+
+        int count = lookupData[0];
+        int first = lookupData[1];
+        
+        for (int j = first; j < first + count; j++) {
+            int particleIdx = _SortedSpatialHashedIndices[j][0];
+            float2 r = _Positions[particleIdx] - srcPos;
             float r2 = dot(r, r);
-            
-            // Early discard of far away particles
-            if (r2 >= _smoothingLength * _smoothingLength) { continue; }
 
-            debug_numComparisons++;
-            debug_sumCellPositions += dot(_Positions[i], float2(1.0, 1.0));
+            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+            if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Discard far away particles
 
-            float rl = sqrt(r2);
-            kernelAcc += DensityKernel(rl, _smoothingLength);
-        } 
-    }
-    else if (_searchMode == 1) {
-        for (int i = 0; i < 9; i++) {
-            int2 cellPos = centreCellPos + neighborOffsets[i];
-            int cellHash = ComputeGridHash(cellPos);
-            int cellKey = GetSpatialIndex(cellHash, _numParticles * 2);
-            int2 lookupData = _LookupHashIndices[cellKey];
-    
-            if (lookupData[0] == 0) { continue; } // No particles in that grid cell
-    
-            int size = lookupData[0];
-            int first = lookupData[1];
-            
-            for (int j = first; j < first + size; j++) {
-                int particleIdx = _SortedSpatialHashedIndices[j][0];
-                float2 r = _Positions[particleIdx] - interpolationCentre;
-                float r2 = dot(r, r);
-
-                if (any(cellPos != GetGridPosition(_Positions[particleIdx], _smoothingLength))) { continue; } // not in the same grid position
-
-                //if (cellHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Not in the same hash
-                
-                if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Check far away particles
-
-                debug_numComparisons++;
-                debug_sumCellPositions += dot((_Positions[particleIdx]), float2(1.0, 1.0));
-
-                float rl = sqrt(r2);
-                kernelAcc += DensityKernel(rl, _smoothingLength);
-            }
-    
+            float rL = sqrt(r2);
+            kernelAcc += DensityKernel(rL, _smoothingLength);
         }
     }
 
     _Densities[id.x] = _particleMass * kernelAcc;
-    //_Densities[id.x] = debug_numComparisons;
-    //_Densities[id.x] = debug_sumCellPositions;
-
 }
 
 [numthreads(64, 1, 1)]

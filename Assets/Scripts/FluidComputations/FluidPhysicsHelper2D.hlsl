@@ -75,8 +75,8 @@ float3 CubicSplineGradient(float3 r, float h) {
     if (r2 >= h2) { return 0.0; }
 
     float h3 = h2 * h;
-    float rl = sqrt(r2);
-    float q = rl / h;
+    float rL = sqrt(r2);
+    float q = rL / h;
     float normFactor = 48.0 / (PI * h3);
     float rawKernelValue = 0.0;
 
@@ -87,7 +87,7 @@ float3 CubicSplineGradient(float3 r, float h) {
         rawKernelValue = - (1.0 - q) * (1.0 - q);
     }
 
-    return normFactor * rawKernelValue * (r / (rl * h));
+    return normFactor * rawKernelValue * (r / (rL * h));
 }
 
 float3 SpikyGradient(float3 r, float h) {
@@ -96,11 +96,11 @@ float3 SpikyGradient(float3 r, float h) {
     
     if (r2 >= h2) { return 0.0; }
 
-    float rl = sqrt(r2);
+    float rL = sqrt(r2);
     float h6 = h2 * h2 * h2;
     float normFactor = - 45.0 / (PI * h6);
 
-    return normFactor * (h - rl) * (h - rl) * (r / rl);
+    return normFactor * (h - rL) * (h - rL) * (r / rL);
 }
 
 float3 WendlandQuinticC2Gradient(float3 r, float h) {
@@ -109,12 +109,12 @@ float3 WendlandQuinticC2Gradient(float3 r, float h) {
 
     if (r2 >= h2) { return 0.0; }
 
-    float rl = sqrt(r2);
+    float rL = sqrt(r2);
     float h4 = h2 * h2;
-    float q = rl / h;
+    float q = rL / h;
     float normFactor = - 210.0 / (PI * h4);
 
-    return normFactor * q * (1.0 - q) * (1.0 - q) * (1.0 - q) * (r / rl);
+    return normFactor * q * (1.0 - q) * (1.0 - q) * (1.0 - q) * (r / rL);
 }
 
 

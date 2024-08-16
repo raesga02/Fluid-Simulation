@@ -64,8 +64,6 @@ public class FluidInitializer2D : MonoBehaviour {
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.color = Color.magenta;
             Gizmos.DrawWireCube(Vector3.zero, Vector2.one * spawnSize);
-            //Gizmos.DrawLine(new Vector2(-spawnSize * 0.5f, 0), new Vector2(spawnSize * 0.5f, 0));
-            //Gizmos.DrawLine(new Vector2(0, -spawnSize * 0.5f), new Vector2(0, spawnSize * 0.5f));
             Gizmos.matrix = matrix;
         }
     }

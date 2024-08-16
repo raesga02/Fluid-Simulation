@@ -14,14 +14,14 @@ static const int2 neighborOffsets[9] = {
 static const int p1 = 73856093;
 static const int p2 = 19349663;
 
-int2 GetGridPosition(float2 pos, float supportRadius) {
+int2 GetCellPos(float2 pos, float supportRadius) {
     return floor(pos / supportRadius);
 }
 
-int ComputeGridHash(int2 gridPos) {
+int ComputeHash(int2 gridPos) {
     return (gridPos.x * p1) + (gridPos.y * p2);
 }
 
-int GetSpatialIndex(int hash, int hashSize) {
+int GetKey(int hash, int hashSize) {
     return (uint)hash % hashSize;
 }
