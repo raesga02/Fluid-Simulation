@@ -5,6 +5,8 @@
 #pragma kernel CalculateDensities
 #pragma kernel ComputeSpatialHashes
 #pragma kernel BuildSpatialHashLookup
+#pragma kernel BitonicMergeStep
+#pragma kernel ComputeSortingDirections
 
 // Helpers
 #include "FluidPhysicsHelper2D.hlsl"
@@ -20,12 +22,16 @@ float2 _boundsSize;
 float _particleMass;
 float _smoothingLength;
 
+int _k;
+int _l;
+
 // Structured buffers (Per instance data)
 RWStructuredBuffer<float2> _Positions;
 RWStructuredBuffer<float2> _Velocities;
 RWStructuredBuffer<float> _Densities;
 RWStructuredBuffer<int2> _SortedSpatialHashedIndices;
 RWStructuredBuffer<int2> _LookupHashIndices;
+RWStructuredBuffer<bool> _SortingDirections;
 
 
 bool IndexOutOfRange(int particleIndex, int max) {
@@ -36,18 +42,47 @@ float2 ReflectAndDampVelocity(float2 velocity, float2 normal) {
     return velocity - (_collisionDamping + 1) * dot(velocity, normal) * normal;
 }
 
+int Compare(int i, int j) {
+    return CompareKeyFromHash(_SortedSpatialHashedIndices[i][1], _SortedSpatialHashedIndices[j][1], _numParticles * 2);
+}
+
+void Exchange(int i, int j) {
+    int2 tmp = _SortedSpatialHashedIndices[i];
+    _SortedSpatialHashedIndices[i] = _SortedSpatialHashedIndices[j];
+    _SortedSpatialHashedIndices[j] = tmp;
+}
+
 
 [numthreads(64, 1, 1)]
 void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
-
+    
     int2 cellPos = GetCellPos(_Positions[id.x], _smoothingLength);
     int hash = ComputeHash(cellPos);
     _SortedSpatialHashedIndices[id.x] = int2(id.x, hash);
-
+    
     // Reset lookupHashIndices (size = 0, first = max int)
     _LookupHashIndices[id.x] = int2(0, 0x7FFFFFFF);
     _LookupHashIndices[id.x + _numParticles] = int2(0, 0x7FFFFFFF);
+}
+
+[numthreads(64, 1, 1)]
+void ComputeSortingDirections(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles >> 1)) { return; }
+
+    bool dir = ((id.x / (_k >> 1)) & 1) == 1;
+    _SortingDirections[id.x] = dir;
+}
+
+[numthreads(64, 1, 1)]
+void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles >> 1)) { return; }
+
+    int i = (id.x / _l) * _l + id.x;
+    int j = i + _l;
+    if (_SortingDirections[id.x] != (Compare(i, j) > 0)) {
+        Exchange(i, j);
+    }
 }
 
 [numthreads(64, 1, 1)]

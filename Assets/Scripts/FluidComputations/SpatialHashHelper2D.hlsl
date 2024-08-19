@@ -23,5 +23,11 @@ int ComputeHash(int2 gridPos) {
 }
 
 int GetKey(int hash, int hashSize) {
+    // TODO: check if alterative module calculation is quicker
+    // return hash - ((uint)hash / hashSize) * hashSize;
     return (uint)hash % hashSize;
+}
+
+int CompareKeyFromHash(int hash1, int hash2, int hashSize) {
+    return GetKey(hash1, hashSize) - GetKey(hash2, hashSize);
 }

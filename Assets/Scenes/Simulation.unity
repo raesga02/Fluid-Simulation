@@ -203,13 +203,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   particleMass: 1
-  gravity: -9.8
+  gravity: -9
   collisionDamping: 0.95
   smoothingLength: 2
   boundsCentre: {x: 0, y: 0}
   boundsSize: {x: 40, y: 20}
   drawBounds: 1
   drawGrid: 1
+  sortWithBitonic: 1
   computeShader: {fileID: 7200000, guid: ccae6602da871c442adf8249c2bf9b64, type: 3}
 --- !u!1 &474069261
 GameObject:
@@ -240,10 +241,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8397a3a08d09824ab8f34167a80a108, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnSize: 10
+  spawnSize: 5.32
   drawSpawnBounds: 1
-  numParticlesPerAxis: 9
-  positionJitter: 2
+  numParticlesPerAxis: 16
+  positionJitter: 1
   initialVelocity: {x: 0, y: 0}
   velocityJitter: 1
   initialDensity: 0
