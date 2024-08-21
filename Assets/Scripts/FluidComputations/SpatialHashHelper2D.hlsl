@@ -1,3 +1,5 @@
+#define INT_MAX 0x7FFFFFFF
+
 static const int2 neighborOffsets[9] = {
     int2(-1, -1),
     int2(-1,  0),
@@ -25,7 +27,7 @@ int ComputeHash(int2 gridPos) {
 int GetKey(int hash, int hashSize) {
     // TODO: check if alterative module calculation is quicker
     // return hash - ((uint)hash / hashSize) * hashSize;
-    return (uint)hash % hashSize;
+    return hash == INT_MAX ? INT_MAX : (uint)hash % hashSize;
 }
 
 int CompareKeyFromHash(int hash1, int hash2, int hashSize) {

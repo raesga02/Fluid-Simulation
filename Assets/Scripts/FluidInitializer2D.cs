@@ -7,10 +7,10 @@ public class FluidInitializer2D : MonoBehaviour {
     [SerializeField] bool drawSpawnBounds = true;
 
     [Header("Particle Spawning Settings")]
-    [SerializeField] int numParticlesPerAxis = 10;
-    [SerializeField] float positionJitter = 0.01f;
+    [SerializeField, Min(2)] int numParticlesPerAxis = 10;
+    [SerializeField, Min(0f)] float positionJitter = 0.01f;
     [SerializeField] Vector2 initialVelocity = Vector2.zero;
-    [SerializeField] float velocityJitter = 0.01f;
+    [SerializeField, Min(0f)] float velocityJitter = 0.01f;
     [SerializeField] float initialDensity = 0.0f;
 
     public struct FluidData {
@@ -21,14 +21,26 @@ public class FluidInitializer2D : MonoBehaviour {
         public Vector2Int[] lookupHashIndices;
     }
 
+    int NextPowerOf2(int n) {
+        n--;
+        n |= n >> 1;   // Divide by 2^k for consecutive doublings of k up to 32,
+        n |= n >> 2;   // and then or the results.
+        n |= n >> 4;
+        n |= n >> 8;
+        n |= n >> 16;
+        n++;
+        return n;
+    }
+
 
     public FluidData InitializeFluid() {
 
         int numParticles = numParticlesPerAxis * numParticlesPerAxis;
+        int paddedNumParticles = NextPowerOf2(numParticles);
         Vector2[] positions = new Vector2[numParticles];
         Vector2[] velocities = new Vector2[numParticles];
         float[] densities = new float[numParticles];
-        Vector2Int[] sortedSpatialHashedIndices = new Vector2Int[numParticles];
+        Vector2Int[] sortedSpatialHashedIndices = new Vector2Int[paddedNumParticles];
         Vector2Int[] lookupHashIndices = new Vector2Int[2 * numParticles];
 
         int i = 0;
@@ -53,6 +65,11 @@ public class FluidInitializer2D : MonoBehaviour {
 
                 i++;
             }
+        }
+
+        // Fill the rest of sortedSpatialHashedIndices
+        for (; i < paddedNumParticles; i++) {
+            sortedSpatialHashedIndices[i] = new Vector2Int(0, int.MaxValue);
         }
 
         return new FluidData() { positions = positions, velocities = velocities, densities = densities, sortedSpatialHashedIndices = sortedSpatialHashedIndices, lookupHashIndices = lookupHashIndices };

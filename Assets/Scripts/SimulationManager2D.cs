@@ -7,6 +7,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     [Header("Settings")]
     public int numParticles;
+    public int paddedNumParticles;
     [Range(0.0001f, 1 / 50f)] public float deltaTime;
 
     [Header("References")]
@@ -40,6 +41,7 @@ public class SimulationManager2D : MonoBehaviour {
     void Start() {
         fluidInitialData = fluidSpawner.InitializeFluid();
         numParticles = fluidInitialData.positions.Length;
+        paddedNumParticles = fluidInitialData.sortedSpatialHashedIndices.Length;
         Time.fixedDeltaTime = deltaTime;
 
         InstantiateComputeBuffers();
@@ -53,7 +55,7 @@ public class SimulationManager2D : MonoBehaviour {
         positionsBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
         velocitiesBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
         densitiesBuffer = new ComputeBuffer(numParticles, 1 * sizeof(float));
-        sortedSpatialHashedIndicesBuffer = new ComputeBuffer(numParticles, 2 * sizeof(int));
+        sortedSpatialHashedIndicesBuffer = new ComputeBuffer(paddedNumParticles, 2 * sizeof(int));
         lookupHashIndicesBuffer = new ComputeBuffer(2 * numParticles, 2 * sizeof(int));
         sortingDirectionsBuffer = new ComputeBuffer(numParticles / 2, 1 * sizeof(bool));
     }

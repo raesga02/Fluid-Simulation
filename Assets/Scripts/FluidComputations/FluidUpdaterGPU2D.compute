@@ -22,8 +22,9 @@ float2 _boundsSize;
 float _particleMass;
 float _smoothingLength;
 
-int _k;
-int _l;
+int _paddedNumParticles;
+int _mergeSize;
+int _compareDist;
 
 // Structured buffers (Per instance data)
 RWStructuredBuffer<float2> _Positions;
@@ -68,18 +69,18 @@ void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
 
 [numthreads(64, 1, 1)]
 void ComputeSortingDirections(uint3 id : SV_DispatchThreadID) {
-    if (IndexOutOfRange(id.x, _numParticles >> 1)) { return; }
+    if (IndexOutOfRange(id.x, _paddedNumParticles)) { return; }
 
-    bool dir = ((id.x / (_k >> 1)) & 1) == 1;
+    bool dir = ((id.x / (_mergeSize >> 1)) & 1) == 1;
     _SortingDirections[id.x] = dir;
 }
 
 [numthreads(64, 1, 1)]
 void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
-    if (IndexOutOfRange(id.x, _numParticles >> 1)) { return; }
+    if (IndexOutOfRange(id.x, _paddedNumParticles)) { return; }
 
-    int i = (id.x / _l) * _l + id.x;
-    int j = i + _l;
+    int i = (id.x / _compareDist) * _compareDist + id.x;
+    int j = i + _compareDist;
     if (_SortingDirections[id.x] != (Compare(i, j) > 0)) {
         Exchange(i, j);
     }

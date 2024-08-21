@@ -58,6 +58,7 @@ public class FluidUpdater2D : MonoBehaviour {
             Time.fixedDeltaTime = manager.deltaTime;
             computeShader.SetFloat("_deltaTime", manager.deltaTime);
             computeShader.SetInt("_numParticles", manager.numParticles);
+            computeShader.SetInt("_paddedNumParticles", manager.paddedNumParticles);
 
             computeShader.SetFloat("_particleMass", particleMass);
             computeShader.SetFloat("_gravity", gravity);
@@ -74,12 +75,12 @@ public class FluidUpdater2D : MonoBehaviour {
 
     void SortParticleIndicesByKey() {
         // Assumes numParticles is a power of 2
-        int groups = GraphicsHelper.ComputeThreadGroups1D(manager.numParticles / 2);
-        for (int k = 2; k <= manager.numParticles; k *= 2) {
-            computeShader.SetInt("_k", k);
+        int groups = GraphicsHelper.ComputeThreadGroups1D(manager.paddedNumParticles);
+        for (int mergeSize = 2; mergeSize <= manager.paddedNumParticles; mergeSize <<= 1) {
+            computeShader.SetInt("_mergeSize", mergeSize);
             computeShader.Dispatch(computeSortingDirectionsKernel, groups, 1, 1);
-            for (int l = k / 2; l > 0; l /= 2) {
-                computeShader.SetInt("_l", l);
+            for (int compareDist = mergeSize / 2; compareDist > 0; compareDist /= 2) {
+                computeShader.SetInt("_compareDist", compareDist);
                 computeShader.Dispatch(bitonicMergeStepKernel, groups, 1, 1);
             }
         }
@@ -89,7 +90,12 @@ public class FluidUpdater2D : MonoBehaviour {
         type += " [";
         for (int i = 0; i < manager.fluidInitialData.sortedSpatialHashedIndices.Length; i++) {
             Vector2Int indexAndHash = manager.fluidInitialData.sortedSpatialHashedIndices[i];
-            indexAndHash[1] = (int)((uint)indexAndHash[1] % (uint)(manager.numParticles * 2));
+            if (indexAndHash[1] == int.MaxValue) {
+                indexAndHash[1] = -1;
+            }
+            else {
+                indexAndHash[1] = (int)((uint)indexAndHash[1] % (uint)(manager.numParticles * 2));
+            }
             type += indexAndHash[1] + ", ";
         }
         return type + "]";
@@ -101,6 +107,7 @@ public class FluidUpdater2D : MonoBehaviour {
 
         computeShader.Dispatch(computeSpatialHashesKernel, groups, 1, 1);
         // Debug.Log(Format("Unsorted"));
+        // manager.sortedSpatialHashedIndicesBuffer.GetData(manager.fluidInitialData.sortedSpatialHashedIndices);
         if (sortWithBitonic) {
             SortParticleIndicesByKey();
         }
