@@ -1,5 +1,3 @@
-#define INT_MAX 0x7FFFFFFF
-
 static const int2 neighborOffsets[9] = {
     int2(-1, -1),
     int2(-1,  0),
@@ -15,6 +13,8 @@ static const int2 neighborOffsets[9] = {
 // Hashing primes
 static const int p1 = 73856093;
 static const int p2 = 19349663;
+
+static const int INT_MAX = 0x7FFFFFFF;
 
 int2 GetCellPos(float2 pos, float supportRadius) {
     return floor(pos / supportRadius);

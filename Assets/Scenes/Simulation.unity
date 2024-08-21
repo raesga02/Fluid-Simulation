@@ -242,12 +242,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8397a3a08d09824ab8f34167a80a108, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnSize: 5.32
+  spawnSize: 10
   drawSpawnBounds: 1
-  numParticlesPerAxis: 11
+  numParticlesPerAxis: 15
   positionJitter: 1
   initialVelocity: {x: 0, y: 0}
-  velocityJitter: 0
+  velocityJitter: 1
   initialDensity: 0
 --- !u!4 &474069263
 Transform:

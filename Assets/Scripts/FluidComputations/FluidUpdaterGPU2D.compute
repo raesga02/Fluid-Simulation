@@ -6,7 +6,6 @@
 #pragma kernel ComputeSpatialHashes
 #pragma kernel BuildSpatialHashLookup
 #pragma kernel BitonicMergeStep
-#pragma kernel ComputeSortingDirections
 
 // Helpers
 #include "FluidPhysicsHelper2D.hlsl"
@@ -32,7 +31,6 @@ RWStructuredBuffer<float2> _Velocities;
 RWStructuredBuffer<float> _Densities;
 RWStructuredBuffer<int2> _SortedSpatialHashedIndices;
 RWStructuredBuffer<int2> _LookupHashIndices;
-RWStructuredBuffer<bool> _SortingDirections;
 
 
 bool IndexOutOfRange(int particleIndex, int max) {
@@ -68,21 +66,15 @@ void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
 }
 
 [numthreads(64, 1, 1)]
-void ComputeSortingDirections(uint3 id : SV_DispatchThreadID) {
-    if (IndexOutOfRange(id.x, _paddedNumParticles)) { return; }
-
-    bool dir = ((id.x / (_mergeSize >> 1)) & 1) == 1;
-    _SortingDirections[id.x] = dir;
-}
-
-[numthreads(64, 1, 1)]
 void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _paddedNumParticles)) { return; }
+    int i = id.x;
+    int j = i ^ _compareDist;
 
-    int i = (id.x / _compareDist) * _compareDist + id.x;
-    int j = i + _compareDist;
-    if (_SortingDirections[id.x] != (Compare(i, j) > 0)) {
-        Exchange(i, j);
+    if (j > i) {
+        if (((i & _mergeSize) == 0) == (Compare(i, j) > 0)) {
+            Exchange(i, j);
+        }
     }
 }
 
