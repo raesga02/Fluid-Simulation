@@ -11,12 +11,12 @@ public class FluidInitializer2D : MonoBehaviour {
     [SerializeField, Min(0f)] float positionJitter = 0.01f;
     [SerializeField] Vector2 initialVelocity = Vector2.zero;
     [SerializeField, Min(0f)] float velocityJitter = 0.01f;
-    [SerializeField] float initialDensity = 0.0f;
 
     public struct FluidData {
         public Vector2[] positions;
         public Vector2[] velocities;
         public float[] densities;
+        public float[] pressures;
         public Vector2Int[] sortedSpatialHashedIndices;
         public Vector2Int[] lookupHashIndices;
     }
@@ -40,6 +40,7 @@ public class FluidInitializer2D : MonoBehaviour {
         Vector2[] positions = new Vector2[numParticles];
         Vector2[] velocities = new Vector2[numParticles];
         float[] densities = new float[numParticles];
+        float[] pressures = new float[numParticles];
         Vector2Int[] sortedSpatialHashedIndices = new Vector2Int[paddedNumParticles];
         Vector2Int[] lookupHashIndices = new Vector2Int[2 * numParticles];
 
@@ -58,7 +59,6 @@ public class FluidInitializer2D : MonoBehaviour {
 
                 positions[i] = wPos + positionJitter * Random.value * Random.insideUnitCircle;
                 velocities[i] = new Vector2(velX, velY) + velocityJitter * Random.value * Random.insideUnitCircle;
-                densities[i] = initialDensity;
                 sortedSpatialHashedIndices[i] = new Vector2Int(0, 0);
                 lookupHashIndices[i] = new Vector2Int(0, 0);
                 lookupHashIndices[i + numParticlesPerAxis * numParticlesPerAxis] = new Vector2Int(0, 0);
@@ -72,7 +72,7 @@ public class FluidInitializer2D : MonoBehaviour {
             sortedSpatialHashedIndices[i] = new Vector2Int(0, int.MaxValue);
         }
 
-        return new FluidData() { positions = positions, velocities = velocities, densities = densities, sortedSpatialHashedIndices = sortedSpatialHashedIndices, lookupHashIndices = lookupHashIndices };
+        return new FluidData() { positions = positions, velocities = velocities, densities = densities, pressures = pressures, sortedSpatialHashedIndices = sortedSpatialHashedIndices, lookupHashIndices = lookupHashIndices };
     }
 
     void OnDrawGizmos() {

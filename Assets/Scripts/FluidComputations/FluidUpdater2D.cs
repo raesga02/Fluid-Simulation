@@ -10,6 +10,10 @@ public class FluidUpdater2D : MonoBehaviour {
     [Header("Density Calculation Settings")]
     [SerializeField, Min(0f)] float smoothingLength;
 
+    [Header("Pressure Calculation Settings")]
+    [SerializeField, Min(0f)] float restDensity;
+    [SerializeField, Min(0f)] float bulkModulus;
+
     [Header("Bounding Box Settings")]
     public Vector2 boundsCentre = Vector2.zero;
     public Vector2 boundsSize = Vector2.one;
@@ -31,6 +35,7 @@ public class FluidUpdater2D : MonoBehaviour {
     const int computeSpatialHashesKernel = 4;
     const int buildSpatialHashLookupKernel = 5;
     const int bitonicMergeStepKernel = 6;
+    const int calculatePressuresKernel = 7;
 
     // Private fields
     SimulationManager2D manager;
@@ -46,7 +51,8 @@ public class FluidUpdater2D : MonoBehaviour {
     void SetBuffers() {
         GraphicsHelper.SetBufferKernels(computeShader, "_Positions", manager.positionsBuffer, integratePositionKernel, handleCollisionsKernel, calculateDensitiesKernel, computeSpatialHashesKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_Velocities", manager.velocitiesBuffer, applyExternalForcesKernel, integratePositionKernel, handleCollisionsKernel);
-        GraphicsHelper.SetBufferKernels(computeShader, "_Densities", manager.densitiesBuffer, calculateDensitiesKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_Densities", manager.densitiesBuffer, calculateDensitiesKernel, calculatePressuresKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_Pressures", manager.pressuresBuffer, calculatePressuresKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_SortedSpatialHashedIndices", manager.sortedSpatialHashedIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel, bitonicMergeStepKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_LookupHashIndices", manager.lookupHashIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel);
     }
@@ -64,6 +70,9 @@ public class FluidUpdater2D : MonoBehaviour {
 
             computeShader.SetFloat("_smoothingLength", smoothingLength);
 
+            computeShader.SetFloat("_restDensity", restDensity);
+            computeShader.SetFloat("_bulkModulus", bulkModulus);
+
             computeShader.SetVector("_boundsCentre", boundsCentre);
             computeShader.SetVector("_boundsSize", boundsSize);
 
@@ -72,7 +81,6 @@ public class FluidUpdater2D : MonoBehaviour {
     }
 
     void SortParticleIndicesByKey() {
-        // Assumes numParticles is a power of 2
         int groups = GraphicsHelper.ComputeThreadGroups1D(manager.paddedNumParticles);
         for (int mergeSize = 2; mergeSize <= manager.paddedNumParticles; mergeSize <<= 1) {
             computeShader.SetInt("_mergeSize", mergeSize);
@@ -131,6 +139,16 @@ public class FluidUpdater2D : MonoBehaviour {
         // toPrintDensities += ")";
         // Debug.Log(toPrintDensities);
 
+        computeShader.Dispatch(calculatePressuresKernel, groups, 1, 1);
+
+        // Print the pressures computed
+        // manager.pressuresBuffer.GetData(manager.fluidInitialData.pressures);
+        // string toPrintPressures = "Pressures: (";
+        // for (int i = 0; i < manager.numParticles; i++) {
+        //     toPrintPressures += manager.fluidInitialData.pressures[i] + ", ";
+        // }
+        // toPrintPressures += ")";
+        // Debug.Log(toPrintPressures);
 
         computeShader.Dispatch(applyExternalForcesKernel, groups, 1, 1);
         computeShader.Dispatch(integratePositionKernel, groups, 1, 1);

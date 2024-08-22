@@ -207,6 +207,8 @@ MonoBehaviour:
   gravity: 0
   collisionDamping: 0.95
   smoothingLength: 2
+  restDensity: 1
+  bulkModulus: 1
   boundsCentre: {x: 0, y: 0}
   boundsSize: {x: 40, y: 20}
   drawBounds: 1
@@ -242,13 +244,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8397a3a08d09824ab8f34167a80a108, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnSize: 10
+  spawnSize: 9
   drawSpawnBounds: 1
   numParticlesPerAxis: 15
   positionJitter: 1
   initialVelocity: {x: 0, y: 0}
-  velocityJitter: 1
-  initialDensity: 0
+  velocityJitter: 0
 --- !u!4 &474069263
 Transform:
   m_ObjectHideFlags: 0

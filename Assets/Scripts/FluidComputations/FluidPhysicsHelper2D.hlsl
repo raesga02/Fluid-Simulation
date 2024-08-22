@@ -127,3 +127,14 @@ float DensityKernel(float r, float h) {
 float3 DensityGradientKernel(float3 r, float h) {
     return Poly6Gradient(r, h);
 }
+
+
+// Pressure helpers
+
+float ColeStateEquation(float density, float restDensity, float k, float gamma) {
+    return k * (pow(density / restDensity, gamma) - 1);
+}
+
+float LinearStateEquation(float density, float restDensity, float k) {
+    return k * (density - restDensity);
+}

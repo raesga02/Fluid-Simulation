@@ -19,6 +19,7 @@ public class SimulationManager2D : MonoBehaviour {
     public ComputeBuffer positionsBuffer { get; private set; }
     public ComputeBuffer velocitiesBuffer { get; private set; }
     public ComputeBuffer densitiesBuffer { get; private set; }
+    public ComputeBuffer pressuresBuffer { get; private set; }
     public ComputeBuffer sortedSpatialHashedIndicesBuffer { get; private set; }
     public ComputeBuffer lookupHashIndicesBuffer { get; private set; }
 
@@ -54,6 +55,7 @@ public class SimulationManager2D : MonoBehaviour {
         positionsBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
         velocitiesBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
         densitiesBuffer = new ComputeBuffer(numParticles, 1 * sizeof(float));
+        pressuresBuffer = new ComputeBuffer(numParticles, 1 * sizeof(float));
         sortedSpatialHashedIndicesBuffer = new ComputeBuffer(paddedNumParticles, 2 * sizeof(int));
         lookupHashIndicesBuffer = new ComputeBuffer(2 * numParticles, 2 * sizeof(int));
     }
@@ -62,6 +64,7 @@ public class SimulationManager2D : MonoBehaviour {
         positionsBuffer.SetData(fluidInitialData.positions);
         velocitiesBuffer.SetData(fluidInitialData.velocities);
         densitiesBuffer.SetData(fluidInitialData.densities);
+        pressuresBuffer.SetData(fluidInitialData.pressures);
         sortedSpatialHashedIndicesBuffer.SetData(fluidInitialData.sortedSpatialHashedIndices);
         lookupHashIndicesBuffer.SetData(fluidInitialData.lookupHashIndices);
     }
@@ -82,6 +85,7 @@ public class SimulationManager2D : MonoBehaviour {
         positionsBuffer.Release();
         velocitiesBuffer.Release();
         densitiesBuffer.Release();
+        pressuresBuffer.Release();
         sortedSpatialHashedIndicesBuffer.Release();
         lookupHashIndicesBuffer.Release();
     }
