@@ -76,6 +76,9 @@ float3 CubicSplineGradient(float3 r, float h) {
 
     float h3 = h2 * h;
     float rL = sqrt(r2);
+
+    if (rL < 1e-10) { return float3(0.0, 0.0, 0.0); }
+
     float q = rL / h;
     float normFactor = 48.0 / (PI * h3);
     float rawKernelValue = 0.0;
@@ -97,6 +100,9 @@ float3 SpikyGradient(float3 r, float h) {
     if (r2 >= h2) { return 0.0; }
 
     float rL = sqrt(r2);
+
+    if (rL < 1e-10) { return float3(0.0, 0.0, 0.0); }
+
     float h6 = h2 * h2 * h2;
     float normFactor = - 45.0 / (PI * h6);
 
@@ -110,11 +116,69 @@ float3 WendlandQuinticC2Gradient(float3 r, float h) {
     if (r2 >= h2) { return 0.0; }
 
     float rL = sqrt(r2);
+
+    if (rL < 1e-10) { return float3(0.0, 0.0, 0.0); }
+
     float h4 = h2 * h2;
     float q = rL / h;
     float normFactor = - 210.0 / (PI * h4);
 
     return normFactor * q * (1.0 - q) * (1.0 - q) * (1.0 - q) * (r / rL);
+}
+
+
+// SPK kernel gradient magnitudes
+
+float Poly6GradientMagnitude(float r, float h) {
+    if (r >= h) { return 0.0; }
+
+    float r2 = r * r;
+    float h2 = h * h;
+    float h4 = h2 * h2;
+    float normFactor = - 945.0 / (32.0 * PI * h4 * h4 * h);
+
+    return normFactor * r * (h2 - r2) * (h2 - r2);
+}
+
+float CubicSplineGradientMagnitude(float r, float h) {
+    if (r >= h) { return 0.0; }
+
+    float h_1 = 1.0 / h;
+    float h3_1 = h_1 * h_1 * h_1;
+    float q = r * h_1;
+    float normFactor = (48.0 * h3_1) / PI;
+    float rawKernelValue = 0.0;
+
+    if (q <= 0.5) {
+        rawKernelValue = q * (3.0 * q - 2.0);
+    }
+    else {
+        rawKernelValue = - (1.0 - q) * (1.0 - q);
+    }
+
+    return normFactor * rawKernelValue * h_1;
+}
+
+float SpikyGradientMagnitude(float r, float h) {
+    if (r >= h) { return 0.0; }
+
+    float h2 = h * h;
+    float h6 = h2 * h2 * h2;
+    float normFactor = - 45.0 / (PI * h6);
+
+    return normFactor * (h - r) * (h - r);
+}
+
+float WendlandQuinticC2GradientMagnitude(float r, float h) {
+    if (r >= h) { return 0.0; }
+
+    float h_1 = 1.0 / h;
+    float h2_1 = h_1 * h_1;
+    float h4_1 = h2_1 * h2_1;
+    float q = r * h_1;
+    float normFactor = - (210.0 * h4_1) / PI;
+
+    return normFactor * q * (1.0 - q) * (1.0 - q) * (1.0 - q);
 }
 
 
