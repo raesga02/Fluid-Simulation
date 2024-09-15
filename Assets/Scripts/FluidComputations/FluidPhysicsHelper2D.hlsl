@@ -1,11 +1,24 @@
 #define PI 3.14159265358979323846
 
 
-// SPH kernels
+// ----------------------------------------------------------------------------
+// Section: SPH Kernels
+// ----------------------------------------------------------------------------
+// Description:
+//     Contains implementations of commonly used SPH kernels. All functions 
+//     in this section assume that the kernel support radius is equal to the 
+//     smoothing length.
+//
+// Function Signature:
+//   - Input:
+//       r (float): The distance from the anchor point to the target point
+//       h (float): The smoothing length
+//   - Output:
+//       _ (float): The kernel value computed from the inputs
 
 float Poly6(float r, float h) {
     if (r >= h) { return 0.0; }
-    
+
     float h2 = h * h;
     float h4 = h2 * h2;
     float r2 = r * r;
@@ -54,7 +67,20 @@ float WendlandQuinticC2(float r, float h) {
 }
 
 
-// SPH Gradient kernels
+// ----------------------------------------------------------------------------
+// Section: SPH Gradient Kernels
+// ----------------------------------------------------------------------------
+// Description:
+//     Contains implementations for the gradients of commonly used SPH kernels. 
+//     All functions in this section assume that the kernel support radius is 
+//     equal to the smoothing length.
+//
+// Function Signature:
+//   - Input:
+//       r (float3): The distance vector from the anchor point to the target point
+//       h (float): The smoothing length
+//   - Output:
+//       _ (float3): The kernel gradient vector computed from the inputs
 
 float3 Poly6Gradient(float3 r, float h) {
     float h2 = h * h;
@@ -127,7 +153,20 @@ float3 WendlandQuinticC2Gradient(float3 r, float h) {
 }
 
 
-// SPK kernel gradient magnitudes
+// ----------------------------------------------------------------------------
+// Section: SPH Gradient Magnitude Kernels
+// ----------------------------------------------------------------------------
+// Description:
+//     Contains implementations for the magnitude of gradients of commonly used 
+//     SPH kernels. All functions in this section assume that the kernel support 
+//     radius is equal to the smoothing length.
+//
+// Function Signature:
+//   - Input:
+//       r (float): The distance from the anchor point to the target point
+//       h (float): The smoothing length
+//   - Output:
+//       _ (float): The magnitude of the kernel gradient computed from the inputs
 
 float Poly6GradientMagnitude(float r, float h) {
     if (r >= h) { return 0.0; }
@@ -144,9 +183,9 @@ float CubicSplineGradientMagnitude(float r, float h) {
     if (r >= h) { return 0.0; }
 
     float h_1 = 1.0 / h;
-    float h3_1 = h_1 * h_1 * h_1;
+    float h3 = h * h * h;
     float q = r * h_1;
-    float normFactor = (48.0 * h3_1) / PI;
+    float normFactor = 48.0 / (PI * h3);
     float rawKernelValue = 0.0;
 
     if (q <= 0.5) {
@@ -173,27 +212,38 @@ float WendlandQuinticC2GradientMagnitude(float r, float h) {
     if (r >= h) { return 0.0; }
 
     float h_1 = 1.0 / h;
-    float h2_1 = h_1 * h_1;
-    float h4_1 = h2_1 * h2_1;
+    float h2 = h * h;
+    float h4 = h2 * h2;
     float q = r * h_1;
-    float normFactor = - (210.0 * h4_1) / PI;
+    float normFactor = - 210.0 / (PI * h4);
 
     return normFactor * q * (1.0 - q) * (1.0 - q) * (1.0 - q);
 }
 
 
-// SPH kernel encapsulators
+// ----------------------------------------------------------------------------
+// Section: SPH Kernel Wrappers
+// ----------------------------------------------------------------------------
+// Description:
+//     Contains wrapper functions for SPH kernels used in various simulation 
+//     calculations. These wrappers facilitate kernel changes without impacting 
+//     the main simulation code.
 
 float DensityKernel(float r, float h) {
     return Poly6(r, h);
 }
 
-float3 DensityGradientKernel(float3 r, float h) {
-    return Poly6Gradient(r, h);
+float3 PressureKernel(float3 r, float h) {
+    return SpikyGradient(r, h);
 }
 
 
-// Pressure helpers
+// ----------------------------------------------------------------------------
+// Section: Pressure State Equations
+// ----------------------------------------------------------------------------
+// Description:
+//     Contains functions for calculating pressure from density values using 
+//     various state equations.
 
 float ColeStateEquation(float density, float restDensity, float k, float gamma) {
     return k * (pow(density / restDensity, gamma) - 1);
