@@ -101,8 +101,8 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
 
     float2 srcPos = _Positions[id.x];
     int2 srcCellPos = GetCellPos(srcPos, _smoothingLength);
-    float kernelAcc = 0.0;
     
+    float rawKernelAcc = 0.0;
     for (int i = 0; i < 9; i++) {
         int2 nbrCellPos = srcCellPos + neighborOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
@@ -115,19 +115,20 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
         int first = lookupData[1];
         
         for (int j = first; j < first + count; j++) {
-            int particleIdx = _SortedSpatialHashedIndices[j][0];
-            float2 r = _Positions[particleIdx] - srcPos;
+            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+            
+            int nbrIdx = _SortedSpatialHashedIndices[j][0];
+            float2 r = _Positions[nbrIdx] - srcPos;
             float r2 = dot(r, r);
 
-            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
             if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Discard far away particles
 
             float rL = sqrt(r2);
-            kernelAcc += DensityKernel(rL, _smoothingLength);
+            rawKernelAcc += DensityKernel(rL, _smoothingLength);
         }
     }
 
-    _Densities[id.x] = _particleMass * kernelAcc;
+    _Densities[id.x] = _particleMass * rawKernelAcc;
 }
 
 [numthreads(64, 1, 1)]
