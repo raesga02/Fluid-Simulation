@@ -52,12 +52,12 @@ public class SimulationManager2D : MonoBehaviour {
     }
 
     void InstantiateComputeBuffers() {
-        positionsBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
-        velocitiesBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
-        densitiesBuffer = new ComputeBuffer(numParticles, 1 * sizeof(float));
-        pressuresBuffer = new ComputeBuffer(numParticles, 1 * sizeof(float));
-        sortedSpatialHashedIndicesBuffer = new ComputeBuffer(paddedNumParticles, 2 * sizeof(int));
-        lookupHashIndicesBuffer = new ComputeBuffer(2 * numParticles, 2 * sizeof(int));
+        positionsBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
+        velocitiesBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
+        densitiesBuffer = new ComputeBuffer(numParticles, sizeof(float));
+        pressuresBuffer = new ComputeBuffer(numParticles, sizeof(float));
+        sortedSpatialHashedIndicesBuffer = new ComputeBuffer(paddedNumParticles, sizeof(int) * 2);
+        lookupHashIndicesBuffer = new ComputeBuffer(numParticles * 2, sizeof(int) * 2);
     }
 
     void FillComputeBuffers() {
