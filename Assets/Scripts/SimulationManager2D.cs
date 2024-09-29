@@ -17,6 +17,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     // Compute buffers
     public ComputeBuffer positionsBuffer { get; private set; }
+    public ComputeBuffer predictedPosBuffer { get; private set; }
     public ComputeBuffer velocitiesBuffer { get; private set; }
     public ComputeBuffer densitiesBuffer { get; private set; }
     public ComputeBuffer pressuresBuffer { get; private set; }
@@ -53,6 +54,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     void InstantiateComputeBuffers() {
         positionsBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
+        predictedPosBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
         velocitiesBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
         densitiesBuffer = new ComputeBuffer(numParticles, sizeof(float));
         pressuresBuffer = new ComputeBuffer(numParticles, sizeof(float));
@@ -62,6 +64,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     void FillComputeBuffers() {
         positionsBuffer.SetData(fluidInitialData.positions);
+        predictedPosBuffer.SetData(fluidInitialData.positions);
         velocitiesBuffer.SetData(fluidInitialData.velocities);
         densitiesBuffer.SetData(fluidInitialData.densities);
         pressuresBuffer.SetData(fluidInitialData.pressures);
@@ -83,6 +86,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     void OnDestroy() {
         positionsBuffer.Release();
+        predictedPosBuffer.Release();
         velocitiesBuffer.Release();
         densitiesBuffer.Release();
         pressuresBuffer.Release();

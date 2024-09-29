@@ -155,7 +155,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   numParticles: 0
   paddedNumParticles: 0
-  deltaTime: 0.02
+  deltaTime: 0.005
   fluidSpawner: {fileID: 474069262}
   fluidUpdater: {fileID: 734064}
   fluidRenderer: {fileID: 734063}
@@ -204,16 +204,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   particleMass: 1
-  gravity: 0
+  gravity: -12
+  smoothingLength: 0.3
+  restDensity: 50
+  bulkModulus: 500
   collisionDamping: 0.95
-  smoothingLength: 1.2
-  restDensity: 3
-  bulkModulus: 1
   boundsCentre: {x: 0, y: 0}
   boundsSize: {x: 40, y: 20}
   drawBounds: 1
   drawGrid: 1
-  sortWithBitonic: 1
   computeShader: {fileID: 7200000, guid: ccae6602da871c442adf8249c2bf9b64, type: 3}
 --- !u!1 &474069261
 GameObject:
@@ -246,7 +245,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawnSize: 15
   drawSpawnBounds: 1
-  numParticlesPerAxis: 200
+  numParticlesPerAxis: 50
   positionJitter: 1
   initialVelocity: {x: 0, y: 0}
   velocityJitter: 1
