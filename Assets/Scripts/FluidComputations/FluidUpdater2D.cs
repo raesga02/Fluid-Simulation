@@ -49,7 +49,8 @@ public class FluidUpdater2D : MonoBehaviour {
     }
 
     void SetBuffers() {
-        GraphicsHelper.SetBufferKernels(computeShader, "_Positions", manager.positionsBuffer, integratePositionKernel, handleCollisionsKernel, calculateDensitiesKernel, computeSpatialHashesKernel, applyPressureForceKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_Positions", manager.positionsBuffer, integratePositionKernel, applyExternalForcesKernel, handleCollisionsKernel, calculateDensitiesKernel, computeSpatialHashesKernel, applyPressureForceKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_PredictedPositions", manager.predictedPosBuffer, applyExternalForcesKernel, calculateDensitiesKernel, computeSpatialHashesKernel, applyPressureForceKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_Velocities", manager.velocitiesBuffer, applyExternalForcesKernel, integratePositionKernel, handleCollisionsKernel, applyPressureForceKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_Densities", manager.densitiesBuffer, calculateDensitiesKernel, calculatePressuresKernel, applyPressureForceKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_Pressures", manager.pressuresBuffer, calculatePressuresKernel, applyPressureForceKernel);
