@@ -1,12 +1,18 @@
 Shader "Custom/FluidParticle"{
     Properties {
-        _ScaleFactor ("Scale Factor", Float) = 1.0
+        _DisplaySize ("Display Size", Float) = 1.0
         _Color ("Particle Color", Color) = (0.1, 0.3, 1, 1)
+        _BlendFactor ("Blend Factor", Float) = 1.0
     }
     SubShader {
-        Tags { "RenderType"="Opaque" }
+        Tags { 
+            "RenderType"="Transparent" 
+            "Queue"="Transparent"
+        }
 
         Pass {
+            ZWrite Off
+            Blend SrcAlpha OneMinusSrcAlpha
 
             CGPROGRAM
             #pragma vertex vert
@@ -15,8 +21,9 @@ Shader "Custom/FluidParticle"{
             #include "UnityCG.cginc"
 
             // Shader properties (Common data)
-            float _ScaleFactor;
+            float _DisplaySize;
             float4 _Color;
+            float _BlendFactor;
 
             // Structured buffers (Per instance data)
             StructuredBuffer<float2> Positions;
@@ -29,6 +36,7 @@ Shader "Custom/FluidParticle"{
 
             struct Interpolators {
                 float4 position : SV_POSITION;
+                float4 mesh_vertex_pos : TEXCOORD0;
                 float4 color : COLOR;
             };
 
@@ -36,24 +44,19 @@ Shader "Custom/FluidParticle"{
             Interpolators vert (MeshData v, uint instanceID : SV_InstanceID) {
                 Interpolators o;
 
-                // Particle centre in world space
-                float4 world_ParticleCentre = float4(Positions[instanceID], 0, 1);
-
-                // Convert mesh vertex from object space -> world space (with scaling)
-                float4 world_finalVertPos = world_ParticleCentre + mul(unity_ObjectToWorld, _ScaleFactor * v.vertex);
-
-                // Obtain the final position of the vertex in object local space
-                float4 object_finalVertPos = mul(unity_WorldToObject, world_finalVertPos);
+                float4 obj_particleCentre = mul(unity_WorldToObject, float4(Positions[instanceID], 0.0, 1.0));
+                float4 obj_finalVertPos = obj_particleCentre + v.vertex * _DisplaySize;
                 
-                // Obtain the position of the vertex from object space -> clip space
-                o.position = UnityObjectToClipPos(object_finalVertPos);
-                o.color = float4(length(Velocities[instanceID]) / 3.0, length(Velocities[instanceID]) / 1.5, 0.5, 1.0);
+                o.position = UnityObjectToClipPos(obj_finalVertPos);
+                o.color = o.color = float4(length(Velocities[instanceID]) / 3.0, length(Velocities[instanceID]) / 1.5, 0.5, 1.0);
+                o.mesh_vertex_pos = float4(v.vertex.xyz, 0.0);
 
                 return o;
             }
 
             float4 frag (Interpolators i) : SV_Target {
-                return i.color;
+                float t = length(i.mesh_vertex_pos);
+                return float4(i.color.rgb, saturate(1.0 - t * _BlendFactor));
             }
             ENDCG
         }
