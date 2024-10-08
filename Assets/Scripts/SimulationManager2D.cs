@@ -1,4 +1,3 @@
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class SimulationManager2D : MonoBehaviour {
@@ -17,6 +16,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     // Compute buffers
     public ComputeBuffer positionsBuffer { get; private set; }
+    public ComputeBuffer predictedPosBuffer { get; private set; }
     public ComputeBuffer velocitiesBuffer { get; private set; }
     public ComputeBuffer densitiesBuffer { get; private set; }
     public ComputeBuffer pressuresBuffer { get; private set; }
@@ -52,16 +52,18 @@ public class SimulationManager2D : MonoBehaviour {
     }
 
     void InstantiateComputeBuffers() {
-        positionsBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
-        velocitiesBuffer = new ComputeBuffer(numParticles, 2 * sizeof(float));
-        densitiesBuffer = new ComputeBuffer(numParticles, 1 * sizeof(float));
-        pressuresBuffer = new ComputeBuffer(numParticles, 1 * sizeof(float));
-        sortedSpatialHashedIndicesBuffer = new ComputeBuffer(paddedNumParticles, 2 * sizeof(int));
-        lookupHashIndicesBuffer = new ComputeBuffer(2 * numParticles, 2 * sizeof(int));
+        positionsBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
+        predictedPosBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
+        velocitiesBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
+        densitiesBuffer = new ComputeBuffer(numParticles, sizeof(float));
+        pressuresBuffer = new ComputeBuffer(numParticles, sizeof(float));
+        sortedSpatialHashedIndicesBuffer = new ComputeBuffer(paddedNumParticles, sizeof(int) * 2);
+        lookupHashIndicesBuffer = new ComputeBuffer(numParticles * 2, sizeof(int) * 2);
     }
 
     void FillComputeBuffers() {
         positionsBuffer.SetData(fluidInitialData.positions);
+        predictedPosBuffer.SetData(fluidInitialData.positions);
         velocitiesBuffer.SetData(fluidInitialData.velocities);
         densitiesBuffer.SetData(fluidInitialData.densities);
         pressuresBuffer.SetData(fluidInitialData.pressures);
@@ -83,6 +85,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     void OnDestroy() {
         positionsBuffer.Release();
+        predictedPosBuffer.Release();
         velocitiesBuffer.Release();
         densitiesBuffer.Release();
         pressuresBuffer.Release();
