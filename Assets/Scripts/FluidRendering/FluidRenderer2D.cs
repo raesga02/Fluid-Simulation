@@ -3,35 +3,51 @@ using UnityEngine;
 public class FluidRenderer2D : MonoBehaviour {
 
     [Header("Display Settings")]
+    [SerializeField, Min(3)] int numSides = 10;
     [SerializeField, Min(0.0f)] float displaySize;
     [SerializeField] Color particleColor;
+    [SerializeField, Range(0f, 1f)] float blendFactor = 1.0f;
 
     [Header("References")]
     [SerializeField] Mesh particleMesh;
     [SerializeField] Material particleMaterial;
-    SimulationManager2D manager;
 
+    // Private fields
+    SimulationManager2D manager;
     ComputeBuffer argsBuffer;
     Bounds bounds;
+    bool needsUpdate = true;
 
 
     public void Init() {
         manager = SimulationManager2D.Instance;
+        SetBuffers();
+        UpdateSettings();
+    }
 
-        // Set the the buffers on the material
+    void SetBuffers() {
         particleMaterial.SetBuffer("Positions", manager.positionsBuffer);
         particleMaterial.SetBuffer("Velocities", manager.velocitiesBuffer);
+    }
 
-        UpdateSettings();
+    void UpdateSettings() {
+        if (needsUpdate) {
+            bounds = new Bounds(transform.position, Vector3.one * 20000);
+            particleMesh = FluidMeshGenerator2D.GenerateMesh(numSides);
+            argsBuffer?.Release();
+            argsBuffer = GraphicsHelper.CreateArgsBuffer(particleMesh, manager.numParticles);
 
-        // create the args buffer
-        argsBuffer = GraphicsHelper.CreateArgsBuffer(particleMesh, manager.numParticles);
+            // Shader properties
+            particleMaterial.SetFloat("_DisplaySize", displaySize);
+            particleMaterial.SetColor("_Color", particleColor);
+            particleMaterial.SetFloat("_BlendFactor", blendFactor);
 
-        // initialize the rendering bounds of the fluid
-        bounds = new Bounds(transform.position, Vector3.one * 20000);
+            needsUpdate = false;
+        }
     }
 
     public void RenderFluid() {
+        UpdateSettings();
         RenderIndirect();
     }
 
@@ -40,12 +56,7 @@ public class FluidRenderer2D : MonoBehaviour {
     }
 
     void OnValidate() {
-        UpdateSettings();
-    }
-
-    void UpdateSettings() {
-        particleMaterial.SetFloat("_ScaleFactor", displaySize);
-        particleMaterial.SetColor("_Color", particleColor);
+        needsUpdate = true;
     }
 
     void OnDestroy() {
