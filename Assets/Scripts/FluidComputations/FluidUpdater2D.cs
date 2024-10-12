@@ -13,6 +13,9 @@ public class FluidUpdater2D : MonoBehaviour {
     [SerializeField, Min(0f)] float restDensity;
     [SerializeField, Min(0f)] float bulkModulus;
 
+    [Header("Viscosity Force Settings")]
+    [SerializeField, Min(0f)] float dynamicViscosity;
+
     [Header("Collision Settings")]
     [SerializeField, Range(0f, 1f)] float collisionDamping = 0.95f;
     [SerializeField] Vector2 boundsCentre = Vector2.zero;
@@ -34,8 +37,9 @@ public class FluidUpdater2D : MonoBehaviour {
     const int calculateDensitiesKernel = 4;
     const int calculatePressuresKernel = 5;
     const int applyPressureForceKernel = 6;
-    const int integratePositionKernel = 7;
-    const int handleCollisionsKernel = 8;
+    const int applyViscosityForceKernel = 7;
+    const int integratePositionKernel = 8;
+    const int handleCollisionsKernel = 9;
 
     // Private fields
     SimulationManager2D manager;
@@ -49,13 +53,13 @@ public class FluidUpdater2D : MonoBehaviour {
     }
 
     void SetBuffers() {
-        GraphicsHelper.SetBufferKernels(computeShader, "_Positions", manager.positionsBuffer, integratePositionKernel, applyExternalForcesKernel, handleCollisionsKernel, calculateDensitiesKernel, computeSpatialHashesKernel, applyPressureForceKernel);
-        GraphicsHelper.SetBufferKernels(computeShader, "_PredictedPositions", manager.predictedPosBuffer, applyExternalForcesKernel, calculateDensitiesKernel, computeSpatialHashesKernel, applyPressureForceKernel);
-        GraphicsHelper.SetBufferKernels(computeShader, "_Velocities", manager.velocitiesBuffer, applyExternalForcesKernel, integratePositionKernel, handleCollisionsKernel, applyPressureForceKernel);
-        GraphicsHelper.SetBufferKernels(computeShader, "_Densities", manager.densitiesBuffer, calculateDensitiesKernel, calculatePressuresKernel, applyPressureForceKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_Positions", manager.positionsBuffer, integratePositionKernel, applyExternalForcesKernel, handleCollisionsKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_PredictedPositions", manager.predictedPosBuffer, applyExternalForcesKernel, calculateDensitiesKernel, computeSpatialHashesKernel, applyPressureForceKernel, applyViscosityForceKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_Velocities", manager.velocitiesBuffer, applyExternalForcesKernel, integratePositionKernel, handleCollisionsKernel, applyPressureForceKernel, applyViscosityForceKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_Densities", manager.densitiesBuffer, calculateDensitiesKernel, calculatePressuresKernel, applyPressureForceKernel, applyViscosityForceKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_Pressures", manager.pressuresBuffer, calculatePressuresKernel, applyPressureForceKernel);
-        GraphicsHelper.SetBufferKernels(computeShader, "_SortedSpatialHashedIndices", manager.sortedSpatialHashedIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel, bitonicMergeStepKernel, applyPressureForceKernel);
-        GraphicsHelper.SetBufferKernels(computeShader, "_LookupHashIndices", manager.lookupHashIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel, applyPressureForceKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_SortedSpatialHashedIndices", manager.sortedSpatialHashedIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel, bitonicMergeStepKernel, applyPressureForceKernel, applyViscosityForceKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_LookupHashIndices", manager.lookupHashIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel, applyPressureForceKernel, applyViscosityForceKernel);
     }
 
     void UpdateSettings() {
@@ -74,6 +78,8 @@ public class FluidUpdater2D : MonoBehaviour {
             computeShader.SetFloat("_restDensity", restDensity);
             computeShader.SetFloat("_bulkModulus", bulkModulus);
 
+            computeShader.SetFloat("_dynamicViscosity", dynamicViscosity);
+
             computeShader.SetVector("_boundsCentre", boundsCentre);
             computeShader.SetVector("_boundsSize", boundsSize);
 
@@ -90,6 +96,7 @@ public class FluidUpdater2D : MonoBehaviour {
         computeShader.Dispatch(calculateDensitiesKernel, groups, 1, 1);
         computeShader.Dispatch(calculatePressuresKernel, groups, 1, 1);
         computeShader.Dispatch(applyPressureForceKernel, groups, 1, 1);
+        //computeShader.Dispatch(applyViscosityForceKernel, groups, 1, 1);
         computeShader.Dispatch(integratePositionKernel, groups, 1, 1);
         computeShader.Dispatch(handleCollisionsKernel, groups, 1, 1);
     }

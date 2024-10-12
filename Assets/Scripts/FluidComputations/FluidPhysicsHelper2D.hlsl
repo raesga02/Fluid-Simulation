@@ -237,6 +237,9 @@ float3 PressureKernel(float3 r, float h) {
     return SpikyGradient(r, h);
 }
 
+float3 ViscosityKernel(float r, float h) {
+    return Spiky(r, h);
+}
 
 // ----------------------------------------------------------------------------
 // Section: Pressure State Equations
