@@ -27,15 +27,15 @@ public class FluidUpdater2D : MonoBehaviour {
     [SerializeField] ComputeShader computeShader;
 
     // Compute kernel IDs
-    const int integratePositionKernel = 0;
-    const int applyExternalForcesKernel = 1;
-    const int handleCollisionsKernel = 2;
-    const int calculateDensitiesKernel = 3;
-    const int computeSpatialHashesKernel = 4;
-    const int buildSpatialHashLookupKernel = 5;
-    const int bitonicMergeStepKernel = 6;
-    const int calculatePressuresKernel = 7;
-    const int applyPressureForceKernel = 8;
+    const int applyExternalForcesKernel = 0;
+    const int computeSpatialHashesKernel = 1;
+    const int bitonicMergeStepKernel = 2;
+    const int buildSpatialHashLookupKernel = 3;
+    const int calculateDensitiesKernel = 4;
+    const int calculatePressuresKernel = 5;
+    const int applyPressureForceKernel = 6;
+    const int integratePositionKernel = 7;
+    const int handleCollisionsKernel = 8;
 
     // Private fields
     SimulationManager2D manager;
@@ -85,10 +85,10 @@ public class FluidUpdater2D : MonoBehaviour {
     public void UpdateFluidState() {
         int groups = GraphicsHelper.ComputeThreadGroups1D(manager.numParticles);
         UpdateSettings();
+        computeShader.Dispatch(applyExternalForcesKernel, groups, 1, 1);
         PrepareNeighborSearchData(groups);
         computeShader.Dispatch(calculateDensitiesKernel, groups, 1, 1);
         computeShader.Dispatch(calculatePressuresKernel, groups, 1, 1);
-        computeShader.Dispatch(applyExternalForcesKernel, groups, 1, 1);
         computeShader.Dispatch(applyPressureForceKernel, groups, 1, 1);
         computeShader.Dispatch(integratePositionKernel, groups, 1, 1);
         computeShader.Dispatch(handleCollisionsKernel, groups, 1, 1);

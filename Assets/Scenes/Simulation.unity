@@ -246,7 +246,7 @@ MonoBehaviour:
   boundsCentre: {x: 0, y: 0}
   boundsSize: {x: 51.6, y: 23.7}
   drawBounds: 1
-  drawGrid: 1
+  drawGrid: 0
   computeShader: {fileID: 7200000, guid: ccae6602da871c442adf8249c2bf9b64, type: 3}
 --- !u!1 &474069261
 GameObject:

@@ -1,13 +1,13 @@
 // Kernels
-#pragma kernel IntegratePosition
 #pragma kernel ApplyExternalForces
-#pragma kernel HandleCollisions
-#pragma kernel CalculateDensities
 #pragma kernel ComputeSpatialHashes
-#pragma kernel BuildSpatialHashLookup
 #pragma kernel BitonicMergeStep
+#pragma kernel BuildSpatialHashLookup
+#pragma kernel CalculateDensities
 #pragma kernel CalculatePressures
 #pragma kernel ApplyPressureForce
+#pragma kernel IntegratePosition
+#pragma kernel HandleCollisions
 
 // Helpers
 #include "FluidPhysicsHelper2D.hlsl"
@@ -39,6 +39,8 @@ RWStructuredBuffer<int2> _SortedSpatialHashedIndices;
 RWStructuredBuffer<int2> _LookupHashIndices;
 
 
+// Helper functions
+
 bool IndexOutOfRange(int particleIndex, int max) {
     return particleIndex >= max;
 }
@@ -57,6 +59,15 @@ void Exchange(int i, int j) {
     _SortedSpatialHashedIndices[j] = tmp;
 }
 
+
+// Kernels
+
+[numthreads(64, 1, 1)]
+void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+    _Velocities[id.x] += float2(0, _gravity) * _deltaTime;
+    _PredictedPositions[id.x] = _Positions[id.x] + _Velocities[id.x] * _deltaTime;
+}
 
 [numthreads(64, 1, 1)]
 void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
@@ -179,13 +190,6 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
     pressureGradient = _particleMass * pressureGradient;
     float2 pressureForce = pressureGradient / srcDensity;
     _Velocities[id.x] += pressureForce * _deltaTime;
-}
-
-[numthreads(64, 1, 1)]
-void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
-    if (IndexOutOfRange(id.x, _numParticles)) { return; }
-    _Velocities[id.x] += float2(0, _gravity) * _deltaTime;
-    _PredictedPositions[id.x] = _Positions[id.x] + _Velocities[id.x] * _deltaTime;
 }
 
 [numthreads(64, 1, 1)]
