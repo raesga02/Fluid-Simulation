@@ -223,10 +223,9 @@ void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
             
             if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Discard far away particles
             
-            float rL = sqrt(r2);
             float2 nbrVelocity = _Velocities[nbrIdx];
             float nbrDensity = _Densities[nbrIdx];
-            viscosityBodyForce += ((nbrVelocity - srcVelocity) / nbrDensity) * ViscosityKernel(rL, _smoothingLength).xy;
+            viscosityBodyForce += ((nbrVelocity - srcVelocity) / nbrDensity) * ViscosityKernel(float3(r.xy, 0.0), _smoothingLength).xy;
         }
     }
     viscosityBodyForce = _dynamicViscosity * _particleMass * viscosityBodyForce;

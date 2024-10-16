@@ -14,7 +14,7 @@ public class FluidUpdater2D : MonoBehaviour {
     [SerializeField, Min(0f)] float bulkModulus;
 
     [Header("Viscosity Force Settings")]
-    [SerializeField, Min(0f)] float dynamicViscosity;
+    [SerializeField, Range(0f, 1f)] float dynamicViscosity;
 
     [Header("Collision Settings")]
     [SerializeField, Range(0f, 1f)] float collisionDamping = 0.95f;
@@ -96,7 +96,7 @@ public class FluidUpdater2D : MonoBehaviour {
         computeShader.Dispatch(calculateDensitiesKernel, groups, 1, 1);
         computeShader.Dispatch(calculatePressuresKernel, groups, 1, 1);
         computeShader.Dispatch(applyPressureForceKernel, groups, 1, 1);
-        //computeShader.Dispatch(applyViscosityForceKernel, groups, 1, 1);
+        computeShader.Dispatch(applyViscosityForceKernel, groups, 1, 1);
         computeShader.Dispatch(integratePositionKernel, groups, 1, 1);
         computeShader.Dispatch(handleCollisionsKernel, groups, 1, 1);
     }
