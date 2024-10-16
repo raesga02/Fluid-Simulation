@@ -119,6 +119,9 @@ public class FluidUpdater2D : MonoBehaviour {
     }
 
     void OnValidate() {
+        // Global editor settings
+        if (smoothingLength <= 0.25) { drawGrid = false; }
+
         needsUpdate = true;
     }
 
