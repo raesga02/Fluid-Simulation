@@ -1,13 +1,14 @@
 // Kernels
-#pragma kernel IntegratePosition
 #pragma kernel ApplyExternalForces
-#pragma kernel HandleCollisions
-#pragma kernel CalculateDensities
 #pragma kernel ComputeSpatialHashes
-#pragma kernel BuildSpatialHashLookup
 #pragma kernel BitonicMergeStep
+#pragma kernel BuildSpatialHashLookup
+#pragma kernel CalculateDensities
 #pragma kernel CalculatePressures
 #pragma kernel ApplyPressureForce
+#pragma kernel ApplyViscosityForce
+#pragma kernel IntegratePosition
+#pragma kernel HandleCollisions
 
 // Helpers
 #include "FluidPhysicsHelper2D.hlsl"
@@ -24,6 +25,7 @@ float _particleMass;
 float _smoothingLength;
 float _restDensity;
 float _bulkModulus;
+float _dynamicViscosity;
 
 int _paddedNumParticles;
 int _mergeSize;
@@ -38,6 +40,8 @@ RWStructuredBuffer<float> _Pressures;
 RWStructuredBuffer<int2> _SortedSpatialHashedIndices;
 RWStructuredBuffer<int2> _LookupHashIndices;
 
+
+// Helper functions
 
 bool IndexOutOfRange(int particleIndex, int max) {
     return particleIndex >= max;
@@ -57,6 +61,15 @@ void Exchange(int i, int j) {
     _SortedSpatialHashedIndices[j] = tmp;
 }
 
+
+// Kernels
+
+[numthreads(64, 1, 1)]
+void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+    _Velocities[id.x] += float2(0, _gravity) * _deltaTime;
+    _PredictedPositions[id.x] = _Positions[id.x] + _Velocities[id.x] * _deltaTime;
+}
 
 [numthreads(64, 1, 1)]
 void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
@@ -163,14 +176,13 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
             if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
 
             int nbrIdx = _SortedSpatialHashedIndices[j][0];
-            float nbrDensity = _Densities[nbrIdx];
-            float nbrPressure = _Pressures[nbrIdx];
             float2 r = _PredictedPositions[nbrIdx] - srcPos;
             float r2 = dot(r, r);
-
+            
             if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Discard far away particles
-
-            float rL = sqrt(r2);
+            
+            float nbrDensity = _Densities[nbrIdx];
+            float nbrPressure = _Pressures[nbrIdx];
             float sharedPressureFactor = (srcPressure + nbrPressure) / (nbrDensity * 2.0);
             pressureGradient += sharedPressureFactor * PressureKernel(float3(r.xy, 0.0), _smoothingLength).xy;
         }
@@ -182,10 +194,43 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
 }
 
 [numthreads(64, 1, 1)]
-void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
+void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
-    _Velocities[id.x] += float2(0, _gravity) * _deltaTime;
-    _PredictedPositions[id.x] = _Positions[id.x] + _Velocities[id.x] * _deltaTime;
+
+    float2 srcPos = _PredictedPositions[id.x];
+    float srcDensity = _Densities[id.x];
+    float2 srcVelocity = _Velocities[id.x];
+    int2 srcCellPos = GetCellPos(srcPos, _smoothingLength);
+    
+    float2 viscosityBodyForce = float2(0.0, 0.0);
+    for (int i = 0; i < 9; i++) {
+        int2 nbrCellPos = srcCellPos + neighborOffsets[i];
+        int nbrHash = ComputeHash(nbrCellPos);
+        int nbrKey = GetKey(nbrHash, _numParticles * 2);
+        int2 lookupData = _LookupHashIndices[nbrKey];
+
+        if (lookupData[0] == 0) { continue; } // No particles with that key
+
+        int count = lookupData[0];
+        int first = lookupData[1];
+        
+        for (int j = first; j < first + count; j++) {
+            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+
+            int nbrIdx = _SortedSpatialHashedIndices[j][0];
+            float2 r = _PredictedPositions[nbrIdx] - srcPos;
+            float r2 = dot(r, r);
+            
+            if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Discard far away particles
+            
+            float2 nbrVelocity = _Velocities[nbrIdx];
+            float nbrDensity = _Densities[nbrIdx];
+            viscosityBodyForce += ((nbrVelocity - srcVelocity) / nbrDensity) * ViscosityKernel(float3(r.xy, 0.0), _smoothingLength).xy;
+        }
+    }
+    viscosityBodyForce = _dynamicViscosity * _particleMass * viscosityBodyForce;
+    float2 viscosityForce = viscosityBodyForce / srcDensity;
+    _Velocities[id.x] += viscosityBodyForce * _deltaTime;
 }
 
 [numthreads(64, 1, 1)]

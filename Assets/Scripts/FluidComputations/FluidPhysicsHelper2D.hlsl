@@ -66,6 +66,18 @@ float WendlandQuinticC2(float r, float h) {
     return normFactor * (1.0 - q) * (1.0 - q) * (1.0 - q) * (1.0 - q) * (4.0 * q + 1.0);
 }
 
+float Muller(float r, float h) {
+    if (r >= h || r < 1e-10 ) { return 0.0; }
+
+    float r2 = r * r; 
+    float r3 = r2 * r;
+    float h2 = h * h;
+    float h3 = h2 * h;
+    float normFactor = 15.0 / (2.0 * PI * h3);
+
+    return normFactor * (- r3 / (2.0 * h3) + r2 / h2 + h / (2.0 * r) - 1);
+}
+
 
 // ----------------------------------------------------------------------------
 // Section: SPH Gradient Kernels
@@ -152,6 +164,22 @@ float3 WendlandQuinticC2Gradient(float3 r, float h) {
     return normFactor * q * (1.0 - q) * (1.0 - q) * (1.0 - q) * (r / rL);
 }
 
+float3 MullerGradient(float3 r, float h) {
+    float r2 = dot(r, r);
+    float h2 = h * h;
+
+    if (r2 >= h2) { return float3(0.0, 0.0, 0.0); }
+
+    float rL = sqrt(r2);
+
+    if (rL < 1e-10) { return float3(0.0, 0.0, 0.0); }
+
+    float h3 = h2 * h;
+    float normFactor = 15.0 / (2.0 * PI * h3);
+
+    return normFactor * (- (3.0 * r2) / (2.0 * h3) + (2.0 * rL) / h2 - h / (2.0 * r2)) * (r / rL);
+}
+
 
 // ----------------------------------------------------------------------------
 // Section: SPH Gradient Magnitude Kernels
@@ -220,6 +248,75 @@ float WendlandQuinticC2GradientMagnitude(float r, float h) {
     return normFactor * q * (1.0 - q) * (1.0 - q) * (1.0 - q);
 }
 
+float MullerGradientMagnitude(float r, float h) {
+    if (r >= h || r < 1e-10) { return 0.0; }
+
+    float r2 = r * r;
+    float h2 = h * h;
+    float h3 = h2 * h;
+    float normFactor = 15.0 / (2.0 * PI * h3);
+
+    return normFactor * (- (3.0 * r2) / (2.0 * h3) + (2.0 * r) / h2 - h / (2.0 * r2));
+}
+
+
+// ----------------------------------------------------------------------------
+// Section: SPH Laplacian Kernels
+// ----------------------------------------------------------------------------
+// Description:
+//     Contains implementations for the laplacians of commonly used SPH kernels. 
+//     All functions in this section assume that the kernel support radius is 
+//     equal to the smoothing length.
+//
+// Function Signature:
+//   - Input:
+//       r (float3): The distance vector from the anchor point to the target point
+//       h (float): The smoothing length
+//   - Output:
+//       _ (float3): The kernel laplacian vector computed from the inputs
+
+float3 MullerLaplacian(float3 r, float h) {
+    float r2 = dot(r, r);
+    float h2 = h * h;
+
+    if (r2 >= h2) { return float3(0.0, 0.0, 0.0); }
+
+    float rL = sqrt(r2);
+
+    if (rL < 1e-10) { return float3(0.0, 0.0, 0.0); }
+    
+    float h6 = h2 * h2 * h2;
+    float normFactor = 45.0 / (PI * h6);
+
+    return normFactor * (h - rL) * (r / rL); 
+}
+
+
+// ----------------------------------------------------------------------------
+// Section: SPH Laplacian Magnitude Kernels
+// ----------------------------------------------------------------------------
+// Description:
+//     Contains implementations for the magnitude of laplacians of commonly used 
+//     SPH kernels. All functions in this section assume that the kernel support 
+//     radius is equal to the smoothing length.
+//
+// Function Signature:
+//   - Input:
+//       r (float): The distance from the anchor point to the target point
+//       h (float): The smoothing length
+//   - Output:
+//       _ (float): The magnitude of the kernel laplacian computed from the inputs
+
+float3 MullerLaplacianMagnitude(float r, float h) {
+    if (r >= h) { return 0.0; }
+
+    float h2 = h * h;
+    float h6 = h2 * h2 * h2;
+    float normFactor = 45.0 / (PI * h6);
+
+    return normFactor * (h - r); 
+}
+
 
 // ----------------------------------------------------------------------------
 // Section: SPH Kernel Wrappers
@@ -237,6 +334,9 @@ float3 PressureKernel(float3 r, float h) {
     return SpikyGradient(r, h);
 }
 
+float3 ViscosityKernel(float3 r, float h) {
+    return MullerLaplacian(r, h);
+}
 
 // ----------------------------------------------------------------------------
 // Section: Pressure State Equations
