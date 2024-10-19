@@ -10,7 +10,7 @@ public class SimulationManager2D : MonoBehaviour {
     [Range(0.0001f, 1 / 50f)] public float deltaTime;
 
     [Header("References")]
-    [SerializeField] FluidInitializer2D fluidSpawner;
+    [SerializeField] FluidSpawnerManager2D fluidSpawner;
     [SerializeField] FluidUpdater2D fluidUpdater;
     [SerializeField] FluidRenderer2D fluidRenderer;
 
@@ -23,7 +23,7 @@ public class SimulationManager2D : MonoBehaviour {
     public ComputeBuffer sortedSpatialHashedIndicesBuffer { get; private set; }
     public ComputeBuffer lookupHashIndicesBuffer { get; private set; }
 
-    public FluidInitializer2D.FluidData fluidInitialData;
+    public FluidData fluidInitialData;
 
 
     // Private constructor to avoid instantiation
@@ -39,7 +39,7 @@ public class SimulationManager2D : MonoBehaviour {
     }
 
     void Start() {
-        fluidInitialData = fluidSpawner.InitializeFluid();
+        fluidInitialData = fluidSpawner.SpawnFluid();
         numParticles = fluidInitialData.positions.Length;
         paddedNumParticles = fluidInitialData.sortedSpatialHashedIndices.Length;
         Time.fixedDeltaTime = deltaTime;
