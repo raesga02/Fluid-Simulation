@@ -242,7 +242,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   particleMass: 90
   gravity: 0
-  smoothingLength: 0.5
+  smoothingLength: 1
   restDensity: 0
   bulkModulus: 460
   dynamicViscosity: 0.522
@@ -264,7 +264,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc043238c154dbf4597d8f353d8a63fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numParticles: 25000
+  numParticles: 10000
   debugUpdateSpawners: 0
   spawners:
   - {fileID: 1107510633}
