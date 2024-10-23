@@ -11,6 +11,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     [Header("References")]
     [SerializeField] FluidSpawnerManager2D fluidSpawner;
+    [SerializeField] FluidColliderManager2D fluidColliderManager;
     [SerializeField] FluidUpdater2D fluidUpdater;
     [SerializeField] FluidRenderer2D fluidRenderer;
 
@@ -22,8 +23,10 @@ public class SimulationManager2D : MonoBehaviour {
     public ComputeBuffer pressuresBuffer { get; private set; }
     public ComputeBuffer sortedSpatialHashedIndicesBuffer { get; private set; }
     public ComputeBuffer lookupHashIndicesBuffer { get; private set; }
+    public ComputeBuffer collidersBuffer { get; private set; }
 
     public FluidData fluidInitialData;
+    public ColliderData[] fluidColliders;
 
 
     // Private constructor to avoid instantiation
@@ -40,6 +43,7 @@ public class SimulationManager2D : MonoBehaviour {
 
     void Start() {
         fluidInitialData = fluidSpawner.SpawnFluid();
+        fluidColliders = fluidColliderManager.GetColliders();
         numParticles = fluidInitialData.positions.Length;
         paddedNumParticles = fluidInitialData.sortedSpatialHashedIndices.Length;
         Time.fixedDeltaTime = deltaTime;
@@ -59,6 +63,7 @@ public class SimulationManager2D : MonoBehaviour {
         pressuresBuffer = new ComputeBuffer(numParticles, sizeof(float));
         sortedSpatialHashedIndicesBuffer = new ComputeBuffer(paddedNumParticles, sizeof(int) * 2);
         lookupHashIndicesBuffer = new ComputeBuffer(numParticles * 2, sizeof(int) * 2);
+        collidersBuffer = new ComputeBuffer(fluidColliders.Length, System.Runtime.InteropServices.Marshal.SizeOf(typeof(ColliderData)));
     }
 
     void FillComputeBuffers() {
@@ -69,6 +74,7 @@ public class SimulationManager2D : MonoBehaviour {
         pressuresBuffer.SetData(fluidInitialData.pressures);
         sortedSpatialHashedIndicesBuffer.SetData(fluidInitialData.sortedSpatialHashedIndices);
         lookupHashIndicesBuffer.SetData(fluidInitialData.lookupHashIndices);
+        collidersBuffer.SetData(fluidColliders);
     }
 
     void FixedUpdate() {
@@ -91,5 +97,6 @@ public class SimulationManager2D : MonoBehaviour {
         pressuresBuffer.Release();
         sortedSpatialHashedIndicesBuffer.Release();
         lookupHashIndicesBuffer.Release();
+        collidersBuffer.Release();
     }
 }
