@@ -1,3 +1,4 @@
+using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 
 public class TestSAT : MonoBehaviour
@@ -11,6 +12,8 @@ public class TestSAT : MonoBehaviour
     public float damping = 1f;
     public BounceDirection bounceDir = BounceDirection.INSIDE;
 
+    public float[] responses = new float[4];
+
 
     private void OnDrawGizmos() {
         vertex = new Vector2[4] {
@@ -21,8 +24,17 @@ public class TestSAT : MonoBehaviour
         };
 
         // Get position to move to to resolve
-        Vector2 moveVector = Collision.SATResponse(point.transform.position, vertex, point.radius);
+        Vector2 moveVector;
+        if (bounceDir == BounceDirection.INSIDE) {
+            moveVector = Collision.SATResponseHollow(point.transform.position, vertex, point.radius, ref responses);
+        }
+        else {
+             moveVector = Collision.SATResponse(point.transform.position, vertex, point.radius, ref responses);
+        }
+
         overlap = !moveVector.Equals(Vector2.zero);
+
+        //Debug.Log(responses[0] + " " + responses[1] + " " + responses[2] + " " + responses[3]);
 
         DrawPolygon(overlap ? Color.red : Color.white);
 
@@ -91,41 +103,31 @@ public static class Collision
         return true;
     }
 
-    private static float? CollisionResponseAcrossLine(ProjectionLine pointProjection, ProjectionLine colliderProjection)
-    {
-        // If point completely inside of collider
-        if (pointProjection.start <= colliderProjection.start && pointProjection.end >= colliderProjection.start)
-            return colliderProjection.start - colliderProjection.end;
-        // If point partially inside
-        else if (colliderProjection.start <= pointProjection.start && colliderProjection.end >= pointProjection.start)
-            return colliderProjection.end - pointProjection.start;
+    private static float? CollisionResponseAcrossLine(ProjectionLine pointProjection, ProjectionLine colliderProjection) {
+        if (pointProjection.start >= colliderProjection.end || pointProjection.end <= colliderProjection.start) {
+            return null;
+        }
+
+        return colliderProjection.end - pointProjection.start;
+    }
+
+    private static float? CollisionResponseAcrossLineHollow(ProjectionLine pointProjection, ProjectionLine colliderProjection) {
+        if (pointProjection.start >= colliderProjection.start && pointProjection.end <= colliderProjection.end) {
+            return null;
+        }
+
+        if (pointProjection.start < colliderProjection.start) {
+            return colliderProjection.start - pointProjection.start;
+        }
+
+        if (pointProjection.end > colliderProjection.end) {
+            return pointProjection.end - colliderProjection.end;
+        }
+
         return null;
     }
 
-    public static Vector2 MTVBetween(Vector2 point, Vector2[] collider, float radius) {
-        if (!CheckOverlap(point, radius, collider)) { return Vector2.zero; }
-
-        float minResponseMagnitude = float.MaxValue;
-        Vector2 responseNormal = Vector2.zero;
-
-        for (int c = 0; c < collider.Length; c++)
-        {
-            Vector2 cEdgeNormal = NormalBetween(collider[c], collider[(c + 1) % collider.Length]);
-            ProjectionLine pointProjected = ProjectPoint(point, radius, cEdgeNormal);
-            ProjectionLine colliderProjected = ProjectLine(collider, cEdgeNormal);
-
-            float? responseMagnitude = CollisionResponseAcrossLine(pointProjected, colliderProjected);
-            if (responseMagnitude != null && Mathf.Abs((float)responseMagnitude) < Mathf.Abs((float)minResponseMagnitude))
-            {
-                minResponseMagnitude = (float)responseMagnitude;
-                responseNormal = cEdgeNormal;
-            }
-        }
-
-        return responseNormal * minResponseMagnitude;
-    }
-
-    public static Vector2 SATResponse(Vector2 point, Vector2[] collider, float radius) {
+    public static Vector2 SATResponse(Vector2 point, Vector2[] collider, float radius, ref float[] responses) {
         float minResponseMagnitude = float.MaxValue;
         Vector2 responseNormal = Vector2.zero;
 
@@ -135,9 +137,10 @@ public static class Collision
             ProjectionLine colliderProjection = ProjectLine(collider, edgeNormal);
 
             float? responseMagnitude = CollisionResponseAcrossLine(pointProjection, colliderProjection);
+            responses[i] = responseMagnitude == null ? 0 : (float) responseMagnitude;
 
             // If not overlap return Vector2.zero as response
-            if (!(pointProjection.start <= colliderProjection.end && pointProjection.end >= colliderProjection.start)) {
+            if (responseMagnitude == null) {
                 return Vector2.zero;
             }
             // If candidate to collide annotate the min magnitude
@@ -151,5 +154,30 @@ public static class Collision
 
         // If loop ends and not found false then overlaps, return response found
         return responseNormal * minResponseMagnitude;
+    }
+
+    public static Vector2 SATResponseHollow(Vector2 point, Vector2[] collider, float radius, ref float[] responses) {
+        float minResponseMagnitude = float.MaxValue;
+        Vector2 responseNormal = Vector2.zero;
+
+        for (int i = 0; i < collider.Length; i++) {
+            Vector2 edgeNormal = NormalBetween(collider[i], collider[(i + 1) % collider.Length]);
+            ProjectionLine pointProjection = ProjectPoint(point, radius, edgeNormal);
+            ProjectionLine colliderProjection = ProjectLine(collider, edgeNormal);
+
+            float? responseMagnitude = CollisionResponseAcrossLineHollow(pointProjection, colliderProjection);
+            responses[i] = responseMagnitude == null ? 0 : (float) responseMagnitude;
+
+            // If candidate to collide annotate the min magnitude
+            if (responseMagnitude != null) {
+                if (Mathf.Abs((float)responseMagnitude) < Mathf.Abs((float)minResponseMagnitude)) {
+                    minResponseMagnitude = (float) responseMagnitude;
+                    responseNormal = edgeNormal;
+                }
+            }
+        }
+
+        // If loop ends and not found false then overlaps, return response found
+        return responseNormal * - minResponseMagnitude;
     }
 }
