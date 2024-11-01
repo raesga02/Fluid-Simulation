@@ -13,7 +13,7 @@
 // Helpers
 #include "FluidPhysicsHelper2D.hlsl"
 #include "SpatialHashHelper2D.hlsl"
-#include "FluidCollisionsHelper.hlsl"
+#include "../FluidColliders/FluidCollisionsHelper.hlsl"
 
 // Shader properties (Common data)
 float _deltaTime;
