@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 
 public enum ColoringMode {
@@ -10,13 +9,15 @@ public class FluidRenderer2D : MonoBehaviour {
 
     [Header("Display Settings")]
     [SerializeField, Min(3)] int numSides = 10;
-    [SerializeField, Min(0.0f)] float displaySize;
-    [SerializeField] ColoringMode colorMode;
-    [SerializeField, Range(0f, 1f)] float blendFactor = 1.0f;
+    [SerializeField, Min(0.0f)] float displaySizeMultiplier;
+    [SerializeField] float independentDisplaySize = 0.2f;
+    [SerializeField] bool independentSizing = false;
 
     [Header("Coloring Mode Parameters")]
+    [SerializeField] ColoringMode colorMode;
     [SerializeField] Color flatParticleColor;
     [SerializeField] Gradient colorGradient;
+    [SerializeField, Range(0f, 1f)] float blendFactor = 1.0f;
     [SerializeField, Min(0.0f)] float maxDisplayVelocity = 20.0f;
 
     [Header("References")]
@@ -49,7 +50,7 @@ public class FluidRenderer2D : MonoBehaviour {
             argsBuffer = GraphicsHelper.CreateArgsBuffer(particleMesh, manager.numParticles);
 
             // Shader properties
-            particleMaterial.SetFloat("_DisplaySize", displaySize);
+            particleMaterial.SetFloat("_DisplaySize", independentSizing ? independentDisplaySize : manager.particleRadius * displaySizeMultiplier);
             particleMaterial.SetFloat("_BlendFactor", blendFactor);
             particleMaterial.SetInteger("_ColoringMode", colorMode.GetHashCode());
             particleMaterial.SetColor("_FlatParticleColor", flatParticleColor);
@@ -83,7 +84,7 @@ public class FluidRenderer2D : MonoBehaviour {
         return texture;
     }
 
-    void OnValidate() {
+    public void OnValidate() {
         needsUpdate = true;
     }
 

@@ -13,15 +13,14 @@
 // Helpers
 #include "FluidPhysicsHelper2D.hlsl"
 #include "SpatialHashHelper2D.hlsl"
+#include "../FluidColliders/FluidCollisionsHelper.hlsl"
 
 // Shader properties (Common data)
 float _deltaTime;
 int _numParticles;
-float _gravity;
-float _collisionDamping;
-float2 _boundsCentre;
-float2 _boundsSize;
+float2 _gravity;
 float _particleMass;
+float _particleRadius;
 float _smoothingLength;
 float _restDensity;
 float _bulkModulus;
@@ -30,6 +29,10 @@ float _dynamicViscosity;
 int _paddedNumParticles;
 int _mergeSize;
 int _compareDist;
+
+int _numColliders;
+float _collisionDamping;
+
 
 // Structured buffers (Per instance data)
 RWStructuredBuffer<float2> _Positions;
@@ -45,10 +48,6 @@ RWStructuredBuffer<int2> _LookupHashIndices;
 
 bool IndexOutOfRange(int particleIndex, int max) {
     return particleIndex >= max;
-}
-
-float2 ReflectAndDampVelocity(float2 velocity, float2 normal) {
-    return velocity - (_collisionDamping + 1) * dot(velocity, normal) * normal;
 }
 
 int Compare(int i, int j) {
@@ -67,7 +66,7 @@ void Exchange(int i, int j) {
 [numthreads(64, 1, 1)]
 void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
-    _Velocities[id.x] += float2(0, _gravity) * _deltaTime;
+    _Velocities[id.x] += _gravity * _deltaTime;
     _PredictedPositions[id.x] = _Positions[id.x] + _Velocities[id.x] * _deltaTime;
 }
 
@@ -243,19 +242,22 @@ void IntegratePosition(uint3 id : SV_DispatchThreadID) {
 void HandleCollisions(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
-    // Obtain the distance from the particle to the closest bounds
-    float2 boundsHalfSize = 0.5 * _boundsSize;
-    float2 distCentreToParticle = _Positions[id.x] - _boundsCentre;
-    float2 quadrant = sign(distCentreToParticle); // The quadrant of the bounds where the particle is
-    float2 dst = boundsHalfSize + quadrant * -1 * distCentreToParticle;
-    
-    if (dst.x <= 0) {
-        _Positions[id.x].x = (quadrant * boundsHalfSize + _boundsCentre).x;
-        _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], float2(-1 * quadrant.x, 0));
-    }
+    for (int i = 0; i < _numColliders; i++) {
+        ParticleCollider particle = { _Positions[id.x], _particleRadius };
+        SimulationCollider lookup = _CollidersLookup[i];
 
-    if (dst.y <= 0) {
-        _Positions[id.x].y = (quadrant * boundsHalfSize + _boundsCentre).y;
-        _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], float2(0, -1 * quadrant.y));
-    }
+        if (lookup.isBounds == 0) {
+            CollisionDisplacement response = GetSolidCollisionResponse(particle, i);
+            if (response.magnitude != 0.0) {
+                _Positions[id.x] += response.magnitude * response.direction;
+                _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], response.direction, _collisionDamping);
+            }
+        }
+        else if (lookup.isBounds == 1) {
+            HollowCollisionDisplacement response = GetHollowCollisionResponse(particle, i);
+            _Positions[id.x] += response.displacement;
+            _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], response.normal, _collisionDamping);
+            _Velocities[id.x] += GetVelocityAdjustment(_Velocities[id.x], response.quadrant, _gravity);
+        }
+    }  
 }
