@@ -34,10 +34,10 @@ public class SimulationManager2D : MonoBehaviour {
     public ComputeBuffer collidersVerticesBuffer { get; private set; }
     public ComputeBuffer collidersNormalsBuffer { get; private set; }
 
-    public FluidData fluidInitialData;
-    public ColliderLookup[] collidersLookups; 
-    public Vector2[] collidersVertices;
-    public Vector2[] collidersNormals;
+    [HideInInspector] public FluidData fluidInitialData;
+    [HideInInspector] public ColliderLookup[] collidersLookups; 
+    [HideInInspector] public Vector2[] collidersVertices;
+    [HideInInspector] public Vector2[] collidersNormals;
 
 
     // Private constructor to avoid instantiation

@@ -252,12 +252,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   particleMass: 10
-  gravity: {x: -9, y: 0}
+  gravity: {x: 0, y: -9.81}
   smoothingLength: 0.3
   restDensity: 800
   bulkModulus: 4000
   dynamicViscosity: 0.01
-  collisionDamping: 0.5
+  collisionDamping: 0.8
   drawGrid: 1
   computeShader: {fileID: 7200000, guid: ccae6602da871c442adf8249c2bf9b64, type: 3}
 --- !u!114 &734065
@@ -365,7 +365,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: positionJitter
-      value: 3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: velocityJitter
@@ -382,6 +382,10 @@ PrefabInstance:
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: initialVelocity.x
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
+      propertyPath: initialVelocity.y
+      value: -4
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: computedParticlesPerAxis.x
@@ -796,6 +800,10 @@ PrefabInstance:
       propertyPath: bounceDirection
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1816198628676750447, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
+      propertyPath: markerSeparation
+      value: 0.75
+      objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalPosition.x
       value: 22.41
@@ -872,6 +880,10 @@ PrefabInstance:
     - target: {fileID: 1816198628676750447, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: colliderSize.y
       value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1816198628676750447, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
+      propertyPath: markerSeparation
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1004,7 +1016,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: positionJitter
-      value: 3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: velocityJitter

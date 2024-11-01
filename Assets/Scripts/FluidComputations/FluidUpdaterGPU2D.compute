@@ -238,26 +238,6 @@ void IntegratePosition(uint3 id : SV_DispatchThreadID) {
     _Positions[id.x] += _Velocities[id.x] * _deltaTime;
 }
 
-void HandleHollowCollision(uint idx, ParticleCollider particle, SimulationCollider lookup) {
-    float2 vertexMaxMax = _CollidersVertices[lookup.startIdx];
-    float2 vertexMinMin = _CollidersVertices[lookup.startIdx + 2];
-    float2 colliderSize = (vertexMaxMax - vertexMinMin) - particle.radius * 2;
-    float2 boundsHalfSize = 0.5 * colliderSize;
-    float2 colliderPos = vertexMinMin + boundsHalfSize + particle.radius;
-    
-    float2 distCentreToParticle = _Positions[idx] - colliderPos;
-    float2 quadrant = sign(distCentreToParticle); // The quadrant of the bounds where the particle is
-    float2 dst = boundsHalfSize + quadrant * -1 * distCentreToParticle;
-
-    float2 needsToBounce = step(float2(0.0, 0.0), -dst);
-    _Positions[idx] += (quadrant * boundsHalfSize + colliderPos - _Positions[idx]) * needsToBounce; 
-    _Velocities[idx] = ReflectAndDampVelocity(_Velocities[idx], - quadrant * needsToBounce, _collisionDamping);
-
-    float2 isGravityOnAxis = step(abs(_gravity), float2(0.0, 0.0));
-    float2 isVelocitySmall = abs(_Velocities[idx]) < 0.001;
-    _Velocities[idx] -= isGravityOnAxis * isVelocitySmall * quadrant * 0.1;
-}
-
 [numthreads(64, 1, 1)]
 void HandleCollisions(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
@@ -267,14 +247,17 @@ void HandleCollisions(uint3 id : SV_DispatchThreadID) {
         SimulationCollider lookup = _CollidersLookup[i];
 
         if (lookup.isBounds == 0) {
-            CollisionDisplacement response = GetCollisionResponse(particle, i);
+            CollisionDisplacement response = GetSolidCollisionResponse(particle, i);
             if (response.magnitude != 0.0) {
-                _Positions[id.x] = _Positions[id.x] + response.magnitude * response.direction;
+                _Positions[id.x] += response.magnitude * response.direction;
                 _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], response.direction, _collisionDamping);
             }
         }
         else if (lookup.isBounds == 1) {
-            HandleHollowCollision(id.x, particle, lookup);
+            HollowCollisionDisplacement response = GetHollowCollisionResponse(particle, i);
+            _Positions[id.x] += response.displacement;
+            _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], response.normal, _collisionDamping);
+            _Velocities[id.x] += GetVelocityAdjustment(_Velocities[id.x], response.quadrant, _gravity);
         }
     }  
 }
