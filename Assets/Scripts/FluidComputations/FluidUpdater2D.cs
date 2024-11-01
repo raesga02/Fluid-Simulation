@@ -4,7 +4,7 @@ public class FluidUpdater2D : MonoBehaviour {
 
     [Header("General Settings")]
     [SerializeField, Min(0f)] float particleMass;
-    [SerializeField] float gravity = -9.81f;
+    [SerializeField] Vector2 gravity = new Vector2(0.0f, -9.81f);
 
     [Header("Density Calculation Settings")]
     [SerializeField, Min(0.0001f)] float smoothingLength;
@@ -76,7 +76,7 @@ public class FluidUpdater2D : MonoBehaviour {
 
             computeShader.SetFloat("_particleMass", particleMass);
             computeShader.SetFloat("_particleRadius", manager.particleRadius);
-            computeShader.SetFloat("_gravity", gravity);
+            computeShader.SetVector("_gravity", gravity);
             computeShader.SetFloat("_collisionDamping", collisionDamping);
 
             computeShader.SetFloat("_smoothingLength", smoothingLength);
