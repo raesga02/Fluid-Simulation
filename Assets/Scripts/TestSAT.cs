@@ -10,7 +10,6 @@ public class TestSAT : MonoBehaviour
     public Vector2[] vertex;
     public bool overlap;
     public float damping = 1f;
-    public BounceDirection bounceDir = BounceDirection.INSIDE;
 
     public float[] responses = new float[4];
 
@@ -25,16 +24,9 @@ public class TestSAT : MonoBehaviour
 
         // Get position to move to to resolve
         Vector2 moveVector;
-        if (bounceDir == BounceDirection.INSIDE) {
-            moveVector = Collision.SATResponseHollow(point.transform.position, vertex, point.radius, ref responses);
-        }
-        else {
-             moveVector = Collision.SATResponse(point.transform.position, vertex, point.radius, ref responses);
-        }
+        moveVector = Collision.SATResponse(point.transform.position, vertex, point.radius, ref responses);
 
         overlap = !moveVector.Equals(Vector2.zero);
-
-        //Debug.Log(responses[0] + " " + responses[1] + " " + responses[2] + " " + responses[3]);
 
         DrawPolygon(overlap ? Color.red : Color.white);
 

@@ -4,7 +4,7 @@ public class FluidCollider2D : MonoBehaviour {
 
     [Header("Collider Settings")]
     [SerializeField] Vector2 colliderSize = new Vector2(1.0f, 1.0f);
-    [SerializeField] BounceDirection bounceDirection = BounceDirection.OUTSIDE;
+    public BounceDirection bounceDirection = BounceDirection.OUTSIDE;
 
     [Header("Display Settings")]
     [SerializeField, Range(0.5f, 2.0f)] float markerSeparation = 0.1f;
@@ -12,12 +12,22 @@ public class FluidCollider2D : MonoBehaviour {
     [SerializeField] bool drawColliderBounds = true;
 
 
-    public ColliderData GetColliderData() {
-        Matrix4x4 rotation = Matrix4x4.Rotate(transform.rotation);
-        return new ColliderData() { 
-            position = transform.position, size = colliderSize, 
-            rotation = rotation, direction = bounceDirection
+    public (Vector2[] vertices, Vector2[] normals) GetData() {
+        Vector2 colliderHalfSize = colliderSize / 2;
+        Vector2[] vertices = new Vector2[] {
+            transform.TransformPoint(colliderHalfSize * new Vector2( 1,  1)),
+            transform.TransformPoint(colliderHalfSize * new Vector2(-1,  1)),
+            transform.TransformPoint(colliderHalfSize * new Vector2(-1, -1)),
+            transform.TransformPoint(colliderHalfSize * new Vector2( 1, -1)),
         };
+        Vector2[] normals = new Vector2[vertices.Length];
+
+        for (int i = 0; i < normals.Length; i++) {
+            Vector2 edge = vertices[(i + 1) % normals.Length] - vertices[i];
+            normals[i] = new Vector2(edge.y, - edge.x).normalized;
+        }
+
+        return (vertices, normals);
     }
 
     void OnDrawGizmos() {
@@ -47,7 +57,7 @@ public class FluidCollider2D : MonoBehaviour {
         };
 
         foreach (Vector2 quadrant in quadrants) {
-            Vector3 corner = quadrant * (colliderSize + Vector2.one * markerSeparation * (int)bounceDirection) * 0.5f;
+            Vector3 corner = quadrant * (colliderSize + Vector2.one * markerSeparation * (bounceDirection == BounceDirection.INSIDE ? 1 : -1)) * 0.5f;
             Vector2 cornerOffsets = - quadrant * markerLength * (colliderSize + Vector2.one * markerSeparation);
             Gizmos.DrawLine(transform.TransformPoint(corner + new Vector3(cornerOffsets.x, 0, 0)), transform.TransformPoint(corner));
             Gizmos.DrawLine(transform.TransformPoint(corner + new Vector3(0, cornerOffsets.y, 0)), transform.TransformPoint(corner));

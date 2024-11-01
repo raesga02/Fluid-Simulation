@@ -1,12 +1,19 @@
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 public class SimulationManager2D : MonoBehaviour {
 
     public static SimulationManager2D Instance { get; private set; }
 
-    [Header("Settings")]
+    [Header("Particle Settings")]
     public int numParticles;
     public int paddedNumParticles;
+    [Min(0.0f)] public float particleRadius;
+
+    [Header("Collider Settings")]
+    public int numColliders;
+
+    [Header("Time Settings")]
     [Range(0.0001f, 1 / 50f)] public float deltaTime;
 
     [Header("References")]
@@ -23,10 +30,14 @@ public class SimulationManager2D : MonoBehaviour {
     public ComputeBuffer pressuresBuffer { get; private set; }
     public ComputeBuffer sortedSpatialHashedIndicesBuffer { get; private set; }
     public ComputeBuffer lookupHashIndicesBuffer { get; private set; }
-    public ComputeBuffer collidersBuffer { get; private set; }
+    public ComputeBuffer collidersLookupsBuffer { get; private set; }
+    public ComputeBuffer collidersVerticesBuffer { get; private set; }
+    public ComputeBuffer collidersNormalsBuffer { get; private set; }
 
     public FluidData fluidInitialData;
-    public ColliderData[] fluidColliders;
+    public ColliderLookup[] collidersLookups; 
+    public Vector2[] collidersVertices;
+    public Vector2[] collidersNormals;
 
 
     // Private constructor to avoid instantiation
@@ -43,9 +54,10 @@ public class SimulationManager2D : MonoBehaviour {
 
     void Start() {
         fluidInitialData = fluidSpawner.SpawnFluid();
-        fluidColliders = fluidColliderManager.GetColliders();
+        (collidersLookups, collidersVertices, collidersNormals) = fluidColliderManager.GetColliderData();
         numParticles = fluidInitialData.positions.Length;
         paddedNumParticles = fluidInitialData.sortedSpatialHashedIndices.Length;
+        numColliders = collidersLookups.Length;
         Time.fixedDeltaTime = deltaTime;
 
         InstantiateComputeBuffers();
@@ -61,9 +73,13 @@ public class SimulationManager2D : MonoBehaviour {
         velocitiesBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
         densitiesBuffer = new ComputeBuffer(numParticles, sizeof(float));
         pressuresBuffer = new ComputeBuffer(numParticles, sizeof(float));
+        
         sortedSpatialHashedIndicesBuffer = new ComputeBuffer(paddedNumParticles, sizeof(int) * 2);
         lookupHashIndicesBuffer = new ComputeBuffer(numParticles * 2, sizeof(int) * 2);
-        collidersBuffer = new ComputeBuffer(fluidColliders.Length, System.Runtime.InteropServices.Marshal.SizeOf(typeof(ColliderData)));
+        
+        collidersLookupsBuffer = new ComputeBuffer(collidersLookups.Length, Marshal.SizeOf(typeof(ColliderLookup)));
+        collidersVerticesBuffer = new ComputeBuffer(collidersVertices.Length, sizeof(float) * 2);
+        collidersNormalsBuffer = new ComputeBuffer(collidersNormals.Length, sizeof(float) * 2);
     }
 
     void FillComputeBuffers() {
@@ -74,7 +90,9 @@ public class SimulationManager2D : MonoBehaviour {
         pressuresBuffer.SetData(fluidInitialData.pressures);
         sortedSpatialHashedIndicesBuffer.SetData(fluidInitialData.sortedSpatialHashedIndices);
         lookupHashIndicesBuffer.SetData(fluidInitialData.lookupHashIndices);
-        collidersBuffer.SetData(fluidColliders);
+        collidersLookupsBuffer.SetData(collidersLookups);
+        collidersVerticesBuffer.SetData(collidersVertices);
+        collidersNormalsBuffer.SetData(collidersNormals);
     }
 
     void FixedUpdate() {
@@ -89,14 +107,23 @@ public class SimulationManager2D : MonoBehaviour {
         fluidRenderer.RenderFluid();
     }
 
+    private void OnValidate() {
+        fluidUpdater.OnValidate();
+        fluidRenderer.OnValidate();
+    }
+
     void OnDestroy() {
         positionsBuffer.Release();
         predictedPosBuffer.Release();
         velocitiesBuffer.Release();
         densitiesBuffer.Release();
         pressuresBuffer.Release();
+
         sortedSpatialHashedIndicesBuffer.Release();
         lookupHashIndicesBuffer.Release();
-        collidersBuffer.Release();
+
+        collidersLookupsBuffer.Release();
+        collidersVerticesBuffer.Release();
+        collidersNormalsBuffer.Release();
     }
 }

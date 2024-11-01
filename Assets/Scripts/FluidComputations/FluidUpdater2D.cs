@@ -18,9 +18,6 @@ public class FluidUpdater2D : MonoBehaviour {
 
     [Header("Collision Settings")]
     [SerializeField, Range(0f, 1f)] float collisionDamping = 0.95f;
-    [SerializeField] Vector2 boundsCentre = Vector2.zero;
-    [SerializeField] Vector2 boundsSize = Vector2.one;
-    [SerializeField] bool drawBounds = true;
 
     [Header("Neighbor search Settings")]
     [SerializeField] bool drawGrid = true;
@@ -60,6 +57,9 @@ public class FluidUpdater2D : MonoBehaviour {
         GraphicsHelper.SetBufferKernels(computeShader, "_Pressures", manager.pressuresBuffer, calculatePressuresKernel, applyPressureForceKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_SortedSpatialHashedIndices", manager.sortedSpatialHashedIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel, bitonicMergeStepKernel, applyPressureForceKernel, applyViscosityForceKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_LookupHashIndices", manager.lookupHashIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel, applyPressureForceKernel, applyViscosityForceKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_CollidersLookup", manager.collidersLookupsBuffer, handleCollisionsKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_CollidersVertices", manager.collidersVerticesBuffer, handleCollisionsKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_CollidersNormals", manager.collidersNormalsBuffer, handleCollisionsKernel);
     }
 
     void UpdateSettings() {
@@ -68,8 +68,10 @@ public class FluidUpdater2D : MonoBehaviour {
             computeShader.SetFloat("_deltaTime", manager.deltaTime);
             computeShader.SetInt("_numParticles", manager.numParticles);
             computeShader.SetInt("_paddedNumParticles", manager.paddedNumParticles);
+            computeShader.SetInt("_numColliders", manager.numColliders);
 
             computeShader.SetFloat("_particleMass", particleMass);
+            computeShader.SetFloat("_particleRadius", manager.particleRadius);
             computeShader.SetFloat("_gravity", gravity);
             computeShader.SetFloat("_collisionDamping", collisionDamping);
 
@@ -79,9 +81,6 @@ public class FluidUpdater2D : MonoBehaviour {
             computeShader.SetFloat("_bulkModulus", bulkModulus);
 
             computeShader.SetFloat("_dynamicViscosity", dynamicViscosity);
-
-            computeShader.SetVector("_boundsCentre", boundsCentre);
-            computeShader.SetVector("_boundsSize", boundsSize);
 
             needsUpdate = false;
         }
@@ -118,7 +117,7 @@ public class FluidUpdater2D : MonoBehaviour {
         }
     }
 
-    void OnValidate() {
+    public void OnValidate() {
         // Global editor settings
         if (smoothingLength <= 0.25) { drawGrid = false; }
 
@@ -126,7 +125,6 @@ public class FluidUpdater2D : MonoBehaviour {
     }
 
     void OnDrawGizmos() {
-        if (drawBounds) { DrawSimulationBounds(); }
         if (drawGrid & Camera.main.orthographic) { DrawSPHGrid(); }
     }
 
@@ -146,13 +144,5 @@ public class FluidUpdater2D : MonoBehaviour {
         for (float i = -numLinesY / 2; i <= numLinesY / 2; i++) {
             Gizmos.DrawLine(new Vector2(-maxX, i * smoothingLength), new Vector2(maxX, i * smoothingLength));
         }
-    }
-
-    private void DrawSimulationBounds() {
-        var matrix = Gizmos.matrix;
-        Gizmos.matrix = transform.localToWorldMatrix;
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireCube(boundsCentre, Vector2.one * boundsSize);
-        Gizmos.matrix = matrix;
     }
 }

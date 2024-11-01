@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   colliderSize: {x: 20, y: 20}
-  bounceDirection: -1
+  bounceDirection: 0
   markerSeparation: 2
   markerLength: 0.15
   drawColliderBounds: 1

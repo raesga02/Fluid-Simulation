@@ -1,16 +1,17 @@
 using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
-public struct ColliderData {
-    public Vector2 position;
-    public Vector2 size;
-    public Matrix4x4 rotation;
-    public BounceDirection direction;
+[StructLayout(LayoutKind.Sequential)]
+public struct ColliderLookup {
+    public int startIdx;
+    public int numSides;
+    public int bounceDirection;
 }
 
 public enum BounceDirection {
+    OUTSIDE = 0,
     INSIDE = 1,
-    OUTSIDE = -1,
 }
 
 public class FluidColliderManager2D : MonoBehaviour {
@@ -21,11 +22,24 @@ public class FluidColliderManager2D : MonoBehaviour {
     [Header("References")]
     public FluidCollider2D[] colliders;
 
-
-    public ColliderData[] GetColliders() {
+    public (ColliderLookup[] lookups, Vector2[] vertices, Vector2[] normals) GetColliderData() {
         UpdateColliders();
 
-        return colliders.Select(collider => collider.GetColliderData()).ToArray();
+        (Vector2[], Vector2[])[] collidersData = colliders.Select(collider => collider.GetData()).ToArray();
+        Vector2[] collidersVertices = collidersData.SelectMany(dataPair => dataPair.Item1).ToArray();
+        Vector2[] collidersNormals = collidersData.SelectMany(dataPair => dataPair.Item2).ToArray();
+        ColliderLookup[] collidersLookups = new ColliderLookup[colliders.Length];
+        
+        int currentIdx = 0;
+        for (int i = 0; i < colliders.Length; i++) {
+            ColliderLookup lookup = new ColliderLookup { startIdx = currentIdx, 
+                                                         numSides = collidersData[i].Item1.Length, 
+                                                         bounceDirection = (int)colliders[i].bounceDirection};
+            collidersLookups[i] = lookup;
+            currentIdx += lookup.numSides;
+        }
+
+        return (collidersLookups, collidersVertices, collidersNormals);
     }
 
     public void UpdateColliders() {
