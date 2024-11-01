@@ -47,6 +47,10 @@ public class FluidUpdater2D : MonoBehaviour {
         manager = SimulationManager2D.Instance;
         SetBuffers();
         UpdateSettings();
+
+        // Resolve initial collisions between spawners and colliders
+        int groups = GraphicsHelper.ComputeThreadGroups1D(manager.numParticles);
+        computeShader.Dispatch(handleCollisionsKernel, groups, 1, 1);
     }
 
     void SetBuffers() {
