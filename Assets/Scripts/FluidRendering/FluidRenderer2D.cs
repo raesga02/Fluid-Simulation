@@ -10,6 +10,7 @@ public class FluidRenderer2D : MonoBehaviour {
     [Header("Display Settings")]
     [SerializeField, Min(3)] int numSides = 10;
     [SerializeField, Min(0.0f)] float displaySizeMultiplier;
+    [SerializeField] float independentDisplaySize = 0.2f;
     [SerializeField] bool independentSizing = false;
 
     [Header("Coloring Mode Parameters")]
@@ -49,7 +50,7 @@ public class FluidRenderer2D : MonoBehaviour {
             argsBuffer = GraphicsHelper.CreateArgsBuffer(particleMesh, manager.numParticles);
 
             // Shader properties
-            particleMaterial.SetFloat("_DisplaySize", independentSizing ? displaySizeMultiplier : manager.particleRadius * displaySizeMultiplier);
+            particleMaterial.SetFloat("_DisplaySize", independentSizing ? independentDisplaySize : manager.particleRadius * displaySizeMultiplier);
             particleMaterial.SetFloat("_BlendFactor", blendFactor);
             particleMaterial.SetInteger("_ColoringMode", colorMode.GetHashCode());
             particleMaterial.SetColor("_FlatParticleColor", flatParticleColor);
