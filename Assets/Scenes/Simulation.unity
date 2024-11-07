@@ -258,7 +258,7 @@ MonoBehaviour:
   bulkModulus: 4000
   dynamicViscosity: 0.01
   collisionDamping: 0.8
-  drawGrid: 1
+  drawGrid: 0
   computeShader: {fileID: 7200000, guid: ccae6602da871c442adf8249c2bf9b64, type: 3}
 --- !u!114 &734065
 MonoBehaviour:
@@ -313,7 +313,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 807997430166551939, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -12
+      value: -11
       objectReference: {fileID: 0}
     - target: {fileID: 807997430166551939, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: m_LocalPosition.z
@@ -349,11 +349,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: spawnSize.x
-      value: 100
+      value: 98
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: spawnSize.y
-      value: 20.8
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: numParticles
@@ -466,7 +466,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 24.4
+  orthographic size: 24.2
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -964,7 +964,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 807997430166551939, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 14.6
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 807997430166551939, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1000,15 +1000,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: spawnSize.x
-      value: 45.5
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: spawnSize.y
-      value: 15.7
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: numParticles
-      value: 12782
+      value: 13355
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: areaMultiplier
