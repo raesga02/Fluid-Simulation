@@ -254,8 +254,8 @@ MonoBehaviour:
   particleMass: 10
   gravity: {x: 0, y: -9.81}
   smoothingLength: 0.3
-  restDensity: 800
-  bulkModulus: 4000
+  restDensity: 850
+  bulkModulus: 4500
   dynamicViscosity: 0.01
   collisionDamping: 0.8
   drawGrid: 0
@@ -357,7 +357,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: numParticles
-      value: 37218
+      value: 38282
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: areaMultiplier
@@ -385,7 +385,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: initialVelocity.y
-      value: -4
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: computedParticlesPerAxis.x
@@ -519,7 +519,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.07999992
+      value: -19.41
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalPosition.y
@@ -806,11 +806,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 22.41
+      value: 4.19
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 6.1
+      value: 4.59
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalPosition.z
@@ -818,7 +818,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.9659258
+      value: 0.9848078
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalRotation.x
@@ -830,7 +830,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.2588191
+      value: 0.17364816
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -842,7 +842,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -887,7 +887,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -22.77
+      value: -42.1
       objectReference: {fileID: 0}
     - target: {fileID: 6276924576091582688, guid: 8af85f69d1a66a2468b5dd51a223c589, type: 3}
       propertyPath: m_LocalPosition.y
@@ -960,7 +960,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 807997430166551939, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -19.33
       objectReference: {fileID: 0}
     - target: {fileID: 807997430166551939, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1008,7 +1008,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: numParticles
-      value: 13355
+      value: 11718
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: areaMultiplier
@@ -1036,7 +1036,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: initialVelocity.y
-      value: -5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3463136827657297150, guid: bed9130bebba72748937138fb6a593a9, type: 3}
       propertyPath: computedParticlesPerAxis.x

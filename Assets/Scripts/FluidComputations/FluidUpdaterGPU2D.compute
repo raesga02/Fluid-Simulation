@@ -10,6 +10,8 @@
 #pragma kernel IntegratePosition
 #pragma kernel HandleCollisions
 
+#define BLOCK_SIZE 64
+
 // Helpers
 #include "FluidPhysicsHelper2D.hlsl"
 #include "SpatialHashHelper2D.hlsl"
@@ -63,14 +65,14 @@ void Exchange(int i, int j) {
 
 // Kernels
 
-[numthreads(64, 1, 1)]
+[numthreads(BLOCK_SIZE, 1, 1)]
 void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
     _Velocities[id.x] += _gravity * _deltaTime;
     _PredictedPositions[id.x] = _Positions[id.x] + _Velocities[id.x] * _deltaTime;
 }
 
-[numthreads(64, 1, 1)]
+[numthreads(BLOCK_SIZE, 1, 1)]
 void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
     
@@ -83,7 +85,7 @@ void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
     _LookupHashIndices[id.x + _numParticles] = int2(0, 0x7FFFFFFF);
 }
 
-[numthreads(64, 1, 1)]
+[numthreads(BLOCK_SIZE, 1, 1)]
 void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _paddedNumParticles)) { return; }
     int i = id.x;
@@ -96,7 +98,7 @@ void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
     }
 }
 
-[numthreads(64, 1, 1)]
+[numthreads(BLOCK_SIZE, 1, 1)]
 void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
@@ -108,7 +110,7 @@ void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
     InterlockedMin(_LookupHashIndices[key][1], candidateFirst);
 }
 
-[numthreads(64, 1, 1)]
+[numthreads(BLOCK_SIZE, 1, 1)]
 void CalculateDensities(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
@@ -144,13 +146,13 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
     _Densities[id.x] = _particleMass * rawKernelAcc;
 }
 
-[numthreads(64, 1, 1)]
+[numthreads(BLOCK_SIZE, 1, 1)]
 void CalculatePressures(int3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
     _Pressures[id.x] = LinearStateEquation(_Densities[id.x], _restDensity, _bulkModulus);
 }
 
-[numthreads(64, 1, 1)]
+[numthreads(BLOCK_SIZE, 1, 1)]
 void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
@@ -192,7 +194,7 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
     _Velocities[id.x] += pressureForce * _deltaTime;
 }
 
-[numthreads(64, 1, 1)]
+[numthreads(BLOCK_SIZE, 1, 1)]
 void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
@@ -232,13 +234,13 @@ void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
     _Velocities[id.x] += viscosityBodyForce * _deltaTime;
 }
 
-[numthreads(64, 1, 1)]
+[numthreads(BLOCK_SIZE, 1, 1)]
 void IntegratePosition(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
     _Positions[id.x] += _Velocities[id.x] * _deltaTime;
 }
 
-[numthreads(64, 1, 1)]
+[numthreads(BLOCK_SIZE, 1, 1)]
 void HandleCollisions(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
