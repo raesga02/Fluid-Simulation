@@ -33,7 +33,7 @@ public static class GraphicsHelper {
         }
     }
 
-    public static int ComputeThreadGroups1D(int numIterations) {
-        return Mathf.CeilToInt(numIterations / 64f);
+    public static int ComputeThreadGroups1D(int numIterations, int blockSize = 64) {
+        return Mathf.CeilToInt(numIterations / (float)blockSize);
     }
 }
