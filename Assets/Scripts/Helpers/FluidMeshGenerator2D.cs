@@ -1,6 +1,11 @@
 using System.Linq;
 using UnityEngine;
 
+public struct AABB {
+    public Vector2 min;
+    public Vector2 max;
+}
+
 [System.Serializable]
 public static class FluidMeshGenerator2D {
 
@@ -41,5 +46,18 @@ public static class FluidMeshGenerator2D {
 
     private static Vector3[] GetNormals(int numSides) {
         return Enumerable.Repeat(new Vector3(0f, 0f, 1f), numSides).ToArray();
+    }
+
+    public static AABB GetMinimumAABB(Mesh mesh, Matrix4x4 localToWorld) {
+        Vector3[] vertices = mesh.vertices.Select(v => localToWorld.MultiplyPoint(v)).ToArray();
+        Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
+        Vector2 max = new Vector2(float.MinValue, float.MinValue);
+
+        foreach (Vector2 v in vertices) {
+            min = new Vector2(Mathf.Min(min.x, v.x), Mathf.Min(min.y, v.y));
+            max = new Vector2(Mathf.Max(max.x, v.x), Mathf.Max(max.y, v.y));
+        }
+
+        return new AABB() { min = min, max = max };
     }
 }
