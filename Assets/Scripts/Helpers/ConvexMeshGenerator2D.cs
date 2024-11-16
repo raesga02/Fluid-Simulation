@@ -7,7 +7,7 @@ public struct AABB {
 }
 
 [System.Serializable]
-public static class FluidMeshGenerator2D {
+public static class ConvexMeshGenerator2D {
 
     public static Mesh GenerateMesh(int numSides, float initialAngle = 0f) {
         return new Mesh { 

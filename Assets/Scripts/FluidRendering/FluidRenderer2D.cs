@@ -45,7 +45,7 @@ public class FluidRenderer2D : MonoBehaviour {
     void UpdateSettings() {
         if (needsUpdate) {
             bounds = new Bounds(transform.position, Vector3.one * 20000);
-            particleMesh = FluidMeshGenerator2D.GenerateMesh(numSides);
+            particleMesh = ConvexMeshGenerator2D.GenerateMesh(numSides);
             argsBuffer?.Release();
             argsBuffer = GraphicsHelper.CreateArgsBuffer(particleMesh, manager.numParticles);
 

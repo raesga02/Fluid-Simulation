@@ -35,8 +35,8 @@ public class FluidCollider2D : MonoBehaviour {
     }
 
     private void UpdateSettings() {
-        mesh = FluidMeshGenerator2D.GenerateMesh(numSides, initialAngle * Mathf.Deg2Rad);
-        minAABB = FluidMeshGenerator2D.GetMinimumAABB(mesh, transform.localToWorldMatrix);
+        mesh = ConvexMeshGenerator2D.GenerateMesh(numSides, initialAngle * Mathf.Deg2Rad);
+        minAABB = ConvexMeshGenerator2D.GetMinimumAABB(mesh, transform.localToWorldMatrix);
     }
 
     private void OnDrawGizmos() {
