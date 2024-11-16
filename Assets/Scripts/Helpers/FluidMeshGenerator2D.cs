@@ -3,22 +3,21 @@ using UnityEngine;
 [System.Serializable]
 public static class FluidMeshGenerator2D {
 
-    public static Mesh GenerateMesh(int numSides) {
+    public static Mesh GenerateMesh(int numSides, float initialAngle = 0f) {
         return new Mesh { 
             name = "Circle n = " + numSides,
-            vertices = GetVertices(numSides),
+            vertices = GetVertices(numSides, initialAngle),
             triangles = GetTriangles(numSides)
         };
     }
 
-    private static Vector3[] GetVertices(int numSides) {
+    private static Vector3[] GetVertices(int numSides, float initialAngle = 0f) {
         Vector3[] vertices = new Vector3[numSides];
-        float progressPerStep = 1.0f / numSides;
-        float radianPerStep = progressPerStep * Mathf.PI * 2;
+        float radianPerStep = Mathf.PI * 2f / numSides;
 
         for (int i = 0; i < numSides; i++) {
-            float progress = radianPerStep * i;
-            vertices[i] = new Vector3(Mathf.Cos(progress), Mathf.Sin(progress), 0f);
+            float angle = radianPerStep * i + initialAngle;
+            vertices[i] = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f);
         }
         
         return vertices;
