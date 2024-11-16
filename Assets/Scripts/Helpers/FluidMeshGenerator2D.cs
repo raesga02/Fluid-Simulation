@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 [System.Serializable]
@@ -7,7 +8,8 @@ public static class FluidMeshGenerator2D {
         return new Mesh { 
             name = "Circle n = " + numSides,
             vertices = GetVertices(numSides, initialAngle),
-            triangles = GetTriangles(numSides)
+            triangles = GetTriangles(numSides),
+            normals = GetNormals(numSides)
         };
     }
 
@@ -35,5 +37,9 @@ public static class FluidMeshGenerator2D {
         }
 
         return triangles;
+    }
+
+    private static Vector3[] GetNormals(int numSides) {
+        return Enumerable.Repeat(new Vector3(0f, 0f, 1f), numSides).ToArray();
     }
 }
