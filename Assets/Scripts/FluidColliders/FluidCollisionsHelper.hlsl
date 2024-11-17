@@ -134,17 +134,15 @@ float2 GetVelocityAdjustment(float2 velocity, float2 quadrant, float2 gravity) {
 HollowCollisionDisplacement GetHollowCollisionResponse(ParticleCollider particle, int colliderIdx) {
     HollowCollisionDisplacement collisionResponse = { float2(0.0, 0.0), float2(0.0, 0.0), float2(0.0, 0.0) };
     SimulationCollider collider = _CollidersLookup[colliderIdx];
-    float2 vertexMaxMax = _CollidersVertices[collider.startIdx];
-    float2 vertexMinMin = _CollidersVertices[collider.startIdx + 2];
-    float2 boundsHalfSize = (vertexMaxMax - vertexMinMin) * 0.5 - particle.radius;
-    float2 colliderCentre = vertexMinMin + boundsHalfSize + particle.radius;
+    float2 aabbHalfSize = (collider.aabb.max - collider.aabb.min) * 0.5 - particle.radius;
+    float2 aabbCentre = collider.aabb.min + aabbHalfSize + particle.radius;
     
-    float2 distCentreToParticle = particle.position - colliderCentre;
+    float2 distCentreToParticle = particle.position - aabbCentre;
     float2 quadrant = sign(distCentreToParticle);
-    float2 dst = boundsHalfSize - quadrant * distCentreToParticle;
+    float2 dst = aabbHalfSize - quadrant * distCentreToParticle;
 
     float2 needsToBounce = step(float2(0.0, 0.0), - dst);
-    collisionResponse.displacement = (quadrant * boundsHalfSize + colliderCentre - particle.position) * needsToBounce; 
+    collisionResponse.displacement = (quadrant * aabbHalfSize + aabbCentre - particle.position) * needsToBounce; 
     collisionResponse.normal = - quadrant * needsToBounce;
     collisionResponse.quadrant = quadrant;
 
