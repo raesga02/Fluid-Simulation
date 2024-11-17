@@ -1,0 +1,30 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Reduce
+
+#define BLOCK_SIZE 256
+#define FLOAT_MAX 3.402823e+38
+#define FLOAT_MIN (- FLOAT_MAX)
+
+RWStructuredBuffer<float2> _InputBuffer;
+RWStructuredBuffer<float> _OutputBuffer;
+groupshared float sharedMem[BLOCK_SIZE];
+
+uint _numParticles;
+float _deltaTime;
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void Reduce (uint3 id : SV_DispatchThreadID, uint3 Gid : SV_GroupID, uint GI : SV_GroupIndex) {
+    sharedMem[GI] = id.x < _numParticles ? dot(_InputBuffer[id.x], _InputBuffer[id.x]) : 0.0;
+    GroupMemoryBarrierWithGroupSync();
+
+    float maxValue = FLOAT_MAX;
+
+    maxValue = sharedMem[0];
+    for (int i = 1; i < BLOCK_SIZE; i++) {
+        maxValue = max(maxValue, sharedMem[i]);
+    }
+
+    if (GI == 0 && Gid.x * BLOCK_SIZE < _numParticles) {
+        _OutputBuffer[Gid.x] = maxValue;
+    }
+}

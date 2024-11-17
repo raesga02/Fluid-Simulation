@@ -7,6 +7,7 @@ public struct ColliderLookup {
     public int startIdx;
     public int numSides;
     public int bounceDirection;
+    public AABB aabb;
 }
 
 public enum BounceDirection {
@@ -25,7 +26,7 @@ public class FluidColliderManager2D : MonoBehaviour {
     public (ColliderLookup[] lookups, Vector2[] vertices, Vector2[] normals) GetColliderData() {
         UpdateColliders();
 
-        (Vector2[], Vector2[])[] collidersData = colliders.Select(collider => collider.GetData()).ToArray();
+        (Vector2[], Vector2[], AABB)[] collidersData = colliders.Select(collider => collider.GetData()).ToArray();
         Vector2[] collidersVertices = collidersData.SelectMany(dataPair => dataPair.Item1).ToArray();
         Vector2[] collidersNormals = collidersData.SelectMany(dataPair => dataPair.Item2).ToArray();
         ColliderLookup[] collidersLookups = new ColliderLookup[colliders.Length];
@@ -34,7 +35,8 @@ public class FluidColliderManager2D : MonoBehaviour {
         for (int i = 0; i < colliders.Length; i++) {
             ColliderLookup lookup = new ColliderLookup { startIdx = currentIdx, 
                                                          numSides = collidersData[i].Item1.Length, 
-                                                         bounceDirection = (int)colliders[i].bounceDirection};
+                                                         bounceDirection = (int)colliders[i].bounceDirection,
+                                                         aabb = collidersData[i].Item3 };
             collidersLookups[i] = lookup;
             currentIdx += lookup.numSides;
         }
