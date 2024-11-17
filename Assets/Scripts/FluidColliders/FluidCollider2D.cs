@@ -1,25 +1,27 @@
+using System.Linq;
 using UnityEngine;
 
 public class FluidCollider2D : MonoBehaviour {
 
     [Header("Collider Settings")]
-    [SerializeField] Vector2 colliderSize = new Vector2(1.0f, 1.0f);
+    [SerializeField, Range(3, 30)] int numSides = 4;
+    [SerializeField, Range(0f, 360)] float initialAngle = 0f;
     public BounceDirection bounceDirection = BounceDirection.OUTSIDE;
 
     [Header("Display Settings")]
-    [SerializeField, Range(0.5f, 2.0f)] float markerSeparation = 0.1f;
-    [SerializeField, Range(0.0f, 0.5f)] float markerLength = 0.1f;
-    [SerializeField] bool drawColliderBounds = true;
+    [SerializeField] bool drawCollider = true;
+    [SerializeField] bool drawColliderAABB = true;
+
+    [Header("Computed Collider")]
+    [SerializeField] Mesh mesh = null;
+    [SerializeField] AABB minAABB;
+
+    bool needsUpdate = true;
 
 
-    public (Vector2[] vertices, Vector2[] normals) GetData() {
-        Vector2 colliderHalfSize = colliderSize / 2;
-        Vector2[] vertices = new Vector2[] {
-            transform.TransformPoint(colliderHalfSize * new Vector2( 1,  1)),
-            transform.TransformPoint(colliderHalfSize * new Vector2(-1,  1)),
-            transform.TransformPoint(colliderHalfSize * new Vector2(-1, -1)),
-            transform.TransformPoint(colliderHalfSize * new Vector2( 1, -1)),
-        };
+    public (Vector2[] vertices, Vector2[] normals, AABB aabb) GetData() {
+        UpdateSettings();
+        Vector2[] vertices = mesh.vertices.Select(v => (Vector2)transform.localToWorldMatrix.MultiplyPoint(v)).ToArray();
         Vector2[] normals = new Vector2[vertices.Length];
 
         for (int i = 0; i < normals.Length; i++) {
@@ -27,42 +29,47 @@ public class FluidCollider2D : MonoBehaviour {
             normals[i] = new Vector2(edge.y, - edge.x).normalized;
         }
 
-        return (vertices, normals);
+        return (vertices, normals, minAABB);
     }
 
-    void OnDrawGizmos() {
-        if (drawColliderBounds) {
-            DrawBox();
-            DrawCorners();
-        }
+    private void OnValidate() {
+        needsUpdate = true;
     }
 
-    void DrawBox() {
+    private void UpdateSettings() {
+        if (!needsUpdate) { return; }
+
+        mesh = ConvexMeshGenerator2D.GenerateMesh(numSides, initialAngle * Mathf.Deg2Rad);
+        minAABB = ConvexMeshGenerator2D.GetMinimumAABB(mesh, transform.localToWorldMatrix);
+        needsUpdate = false;
+    }
+
+    private void OnDrawGizmos() {
+        UpdateSettings();
+        if (drawCollider) { DrawCollider(); }
+        if (drawColliderAABB) { DrawColliderAABB(); }
+    }
+
+    private void DrawCollider() {
         var matrix = Gizmos.matrix;
         Gizmos.matrix = transform.localToWorldMatrix;
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireCube(Vector3.zero, colliderSize);
-        Gizmos.matrix = matrix;
-    }
+        Gizmos.color = Color.gray;
 
-    void DrawCorners() {
-        var matrix = Gizmos.matrix;
-        Gizmos.color = new Color(0.7f, 0.4f, 0.05f, 1.0f);
 
-        Vector2[] quadrants = new Vector2[] {
-            new Vector2( 1,  1),
-            new Vector2(-1,  1),
-            new Vector2( 1, -1),
-            new Vector2(-1, -1)
-        };
-
-        foreach (Vector2 quadrant in quadrants) {
-            Vector3 corner = quadrant * (colliderSize + Vector2.one * markerSeparation * (bounceDirection == BounceDirection.INSIDE ? 1 : -1)) * 0.5f;
-            Vector2 cornerOffsets = - quadrant * markerLength * (colliderSize + Vector2.one * markerSeparation);
-            Gizmos.DrawLine(transform.TransformPoint(corner + new Vector3(cornerOffsets.x, 0, 0)), transform.TransformPoint(corner));
-            Gizmos.DrawLine(transform.TransformPoint(corner + new Vector3(0, cornerOffsets.y, 0)), transform.TransformPoint(corner));
+        if (bounceDirection == BounceDirection.OUTSIDE) {
+            Gizmos.DrawMesh(mesh);
+        }
+        else {
+            Gizmos.DrawLineStrip(mesh.vertices, true);
         }
 
         Gizmos.matrix = matrix;
+    }
+
+    private void DrawColliderAABB() {
+        Vector2 size = minAABB.max - minAABB.min;
+        Vector2 centre = minAABB.min + size * 0.5f;
+        Gizmos.color = Color.white;
+        Gizmos.DrawWireCube(centre, size);
     }
 }
