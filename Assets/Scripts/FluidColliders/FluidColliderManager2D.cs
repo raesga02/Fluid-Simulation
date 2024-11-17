@@ -18,6 +18,7 @@ public enum BounceDirection {
 public class FluidColliderManager2D : MonoBehaviour {
     
     [Header("Fluid Colliders Settings")]
+    [SerializeField] bool drawCollidersAABB = false;
     [SerializeField] bool debugUpdateColliders = false;
 
     [Header("References")]
@@ -46,6 +47,9 @@ public class FluidColliderManager2D : MonoBehaviour {
 
     public void UpdateColliders() {
         colliders = GetComponentsInChildren<FluidCollider2D>();
+        foreach (FluidCollider2D collider in colliders) {
+            collider.drawColliderAABB = drawCollidersAABB;
+        }
     }
 
     private void OnValidate() {

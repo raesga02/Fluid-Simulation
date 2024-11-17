@@ -10,7 +10,7 @@ public class FluidCollider2D : MonoBehaviour {
 
     [Header("Display Settings")]
     [SerializeField] bool drawCollider = true;
-    [SerializeField] bool drawColliderAABB = true;
+    public bool drawColliderAABB = true;
 
     [Header("Computed Collider")]
     [SerializeField] Mesh mesh = null;
