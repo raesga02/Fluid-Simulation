@@ -4,7 +4,7 @@ using UnityEngine;
 public class FluidCollider2D : MonoBehaviour {
 
     [Header("Collider Settings")]
-    [SerializeField, Range(3, 20)] int numSides = 4;
+    [SerializeField, Range(3, 30)] int numSides = 4;
     [SerializeField, Range(0f, 360)] float initialAngle = 0f;
     public BounceDirection bounceDirection = BounceDirection.OUTSIDE;
 
@@ -35,7 +35,9 @@ public class FluidCollider2D : MonoBehaviour {
     }
 
     private void UpdateSettings() {
-        mesh = ConvexMeshGenerator2D.GenerateMesh(numSides, initialAngle * Mathf.Deg2Rad);
+        if (mesh == null || mesh.vertices.Length != numSides) {
+            mesh = ConvexMeshGenerator2D.GenerateMesh(numSides, initialAngle * Mathf.Deg2Rad);
+        }
         minAABB = ConvexMeshGenerator2D.GetMinimumAABB(mesh, transform.localToWorldMatrix);
     }
 

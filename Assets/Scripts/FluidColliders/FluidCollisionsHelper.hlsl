@@ -51,7 +51,7 @@ float2 ReflectAndDampVelocity(float2 velocity, float2 normal, float collisionDam
 }
 
 
-// Projection Helpers
+// Collision Helpers
 
 ProjectionLine ProjectCollider(SimulationCollider collider, float2 normal) {
     ProjectionLine colliderProjection = { FLOAT_MAX, FLOAT_MIN };
@@ -71,6 +71,17 @@ ProjectionLine ProjectParticle(ParticleCollider particle, float2 normal) {
     return particleProjection;
 }
 
+bool isOutsideAABB(ParticleCollider particle, AABB aabb) {
+    float2 aabbHalfSize = (aabb.max - aabb.min) * 0.5 - particle.radius;
+    float2 aabbCentre = aabb.min + aabbHalfSize + particle.radius;
+    
+    float2 distCentreToParticle = particle.position - aabbCentre;
+    float2 quadrant = sign(distCentreToParticle);
+    float2 dst = aabbHalfSize - quadrant * distCentreToParticle;
+
+    return all(step(0.0, - dst));
+}
+
 
 // Collision responses
 
@@ -85,6 +96,12 @@ float GetCollisionResponseOverLine(ProjectionLine particleProjection, Projection
 CollisionDisplacement GetSolidCollisionResponse(ParticleCollider particle, int colliderIdx) {
     SimulationCollider collider = _CollidersLookup[colliderIdx];
     CollisionDisplacement collisionResponse = { FLOAT_MAX, float2(0.0, 0.0) };
+
+    // Early discard with the aabb
+    if (isOutsideAABB(particle, collider.aabb)) {
+        collisionResponse.magnitude = 0.0;
+        return collisionResponse;
+    }
 
     for (int i = 0; i < collider.numSides; i++) {
         float2 edgeNormal = _CollidersNormals[collider.startIdx + i];
