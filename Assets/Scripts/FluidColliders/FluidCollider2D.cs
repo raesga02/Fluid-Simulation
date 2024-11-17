@@ -16,6 +16,8 @@ public class FluidCollider2D : MonoBehaviour {
     [SerializeField] Mesh mesh = null;
     [SerializeField] AABB minAABB;
 
+    bool needsUpdate = true;
+
 
     public (Vector2[] vertices, Vector2[] normals, AABB aabb) GetData() {
         UpdateSettings();
@@ -31,14 +33,15 @@ public class FluidCollider2D : MonoBehaviour {
     }
 
     private void OnValidate() {
-        UpdateSettings();
+        needsUpdate = true;
     }
 
     private void UpdateSettings() {
-        if (mesh == null || mesh.vertices.Length != numSides) {
-            mesh = ConvexMeshGenerator2D.GenerateMesh(numSides, initialAngle * Mathf.Deg2Rad);
-        }
+        if (!needsUpdate) { return; }
+
+        mesh = ConvexMeshGenerator2D.GenerateMesh(numSides, initialAngle * Mathf.Deg2Rad);
         minAABB = ConvexMeshGenerator2D.GetMinimumAABB(mesh, transform.localToWorldMatrix);
+        needsUpdate = false;
     }
 
     private void OnDrawGizmos() {
