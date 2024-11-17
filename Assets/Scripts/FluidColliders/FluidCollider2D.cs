@@ -17,7 +17,7 @@ public class FluidCollider2D : MonoBehaviour {
     [SerializeField] AABB minAABB;
 
 
-    public (Vector2[] vertices, Vector2[] normals) GetData() {
+    public (Vector2[] vertices, Vector2[] normals, AABB aabb) GetData() {
         UpdateSettings();
         Vector2[] vertices = mesh.vertices.Select(v => (Vector2)transform.localToWorldMatrix.MultiplyPoint(v)).ToArray();
         Vector2[] normals = new Vector2[vertices.Length];
@@ -27,7 +27,7 @@ public class FluidCollider2D : MonoBehaviour {
             normals[i] = new Vector2(edge.y, - edge.x).normalized;
         }
 
-        return (vertices, normals);
+        return (vertices, normals, minAABB);
     }
 
     private void OnValidate() {

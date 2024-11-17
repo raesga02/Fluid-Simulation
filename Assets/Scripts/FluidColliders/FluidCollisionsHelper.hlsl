@@ -14,10 +14,16 @@ struct ParticleCollider {
     float radius;
 };
 
+struct AABB {
+    float2 min;
+    float2 max;
+};
+
 struct SimulationCollider {
     int startIdx;
     int numSides;
     int isBounds;
+    AABB aabb;
 };
 
 struct CollisionDisplacement {

@@ -1,6 +1,8 @@
 using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
+[StructLayout(LayoutKind.Sequential)]
 public struct AABB {
     public Vector2 min;
     public Vector2 max;
