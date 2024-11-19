@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace _2D {
 
-    public class SimulationManager2D : MonoBehaviour {
+    public class SimulationManager : MonoBehaviour {
 
-        public static SimulationManager2D Instance { get; private set; }
+        public static SimulationManager Instance { get; private set; }
 
         [Header("Particle Settings")]
         public int numParticles;
@@ -19,10 +19,10 @@ namespace _2D {
         [Range(0.0001f, 1 / 50f)] public float deltaTime;
 
         [Header("References")]
-        [SerializeField] FluidSpawnerManager2D fluidSpawner;
-        [SerializeField] FluidColliderManager2D fluidColliderManager;
-        [SerializeField] FluidUpdater2D fluidUpdater;
-        [SerializeField] FluidRenderer2D fluidRenderer;
+        [SerializeField] FluidSpawnerManager fluidSpawner;
+        [SerializeField] FluidColliderManager fluidColliderManager;
+        [SerializeField] FluidUpdater fluidUpdater;
+        [SerializeField] FluidRenderer fluidRenderer;
 
         // Compute buffers
         public ComputeBuffer positionsBuffer { get; private set; }
@@ -43,7 +43,7 @@ namespace _2D {
 
 
         // Private constructor to avoid instantiation
-        private SimulationManager2D() { }
+        private SimulationManager() { }
 
         void Awake() {
             if (Instance != null && Instance != this) {

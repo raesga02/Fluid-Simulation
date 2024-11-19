@@ -4,7 +4,7 @@ using Random = UnityEngine.Random;
 
 namespace _2D {
 
-    public class FluidSpawner2D : MonoBehaviour {
+    public class FluidSpawner : MonoBehaviour {
         
         [Header("Spawner Settings")]
         public int numParticles = 1000;

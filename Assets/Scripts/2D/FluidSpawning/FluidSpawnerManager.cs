@@ -12,14 +12,14 @@ namespace _2D {
         public Vector2Int[] lookupHashIndices;
     }
 
-    public class FluidSpawnerManager2D : MonoBehaviour {
+    public class FluidSpawnerManager : MonoBehaviour {
 
         [Header("Fluid Spawning Settings")]
         [SerializeField] int numParticles = 1000;
         [SerializeField] bool debugUpdateSpawners = false;
 
         [Header("References")]
-        public FluidSpawner2D[] spawners;
+        public FluidSpawner[] spawners;
 
 
         public FluidData SpawnFluid() {
@@ -42,7 +42,7 @@ namespace _2D {
         }
 
         public void UpdateSpawners() {
-            spawners = GetComponentsInChildren<FluidSpawner2D>();
+            spawners = GetComponentsInChildren<FluidSpawner>();
             DistributeParticles();
         }
 

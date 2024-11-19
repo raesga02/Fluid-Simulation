@@ -17,14 +17,14 @@ namespace _2D {
         INSIDE = 1,
     }
 
-    public class FluidColliderManager2D : MonoBehaviour {
+    public class FluidColliderManager : MonoBehaviour {
         
         [Header("Fluid Colliders Settings")]
         [SerializeField] bool drawCollidersAABB = false;
         [SerializeField] bool debugUpdateColliders = false;
 
         [Header("References")]
-        public FluidCollider2D[] colliders;
+        public FluidCollider[] colliders;
 
         public (ColliderLookup[] lookups, Vector2[] vertices, Vector2[] normals) GetColliderData() {
             UpdateColliders();
@@ -48,8 +48,8 @@ namespace _2D {
         }
 
         public void UpdateColliders() {
-            colliders = GetComponentsInChildren<FluidCollider2D>();
-            foreach (FluidCollider2D collider in colliders) {
+            colliders = GetComponentsInChildren<FluidCollider>();
+            foreach (FluidCollider collider in colliders) {
                 collider.drawColliderAABB = drawCollidersAABB;
             }
         }

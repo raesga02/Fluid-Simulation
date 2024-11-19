@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace _2D {
 
-    public class FluidCollider2D : MonoBehaviour {
+    public class FluidCollider : MonoBehaviour {
 
         [Header("Collider Settings")]
         [SerializeField, Range(3, 30)] int numSides = 4;
@@ -41,8 +41,8 @@ namespace _2D {
         private void UpdateSettings() {
             if (!needsUpdate) { return; }
 
-            mesh = ConvexMeshGenerator2D.GenerateMesh(numSides, initialAngle * Mathf.Deg2Rad);
-            minAABB = ConvexMeshGenerator2D.GetMinimumAABB(mesh, transform.localToWorldMatrix);
+            mesh = ConvexMeshGenerator.GenerateMesh(numSides, initialAngle * Mathf.Deg2Rad);
+            minAABB = ConvexMeshGenerator.GetMinimumAABB(mesh, transform.localToWorldMatrix);
             needsUpdate = false;
         }
 

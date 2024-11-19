@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace _2D {
 
-    public class FluidUpdater2D : MonoBehaviour {
+    public class FluidUpdater : MonoBehaviour {
 
         [Header("General Settings")]
         [SerializeField] int blockSize = 32;
@@ -42,12 +42,12 @@ namespace _2D {
         const int handleCollisionsKernel = 9;
 
         // Private fields
-        SimulationManager2D manager;
+        SimulationManager manager;
         bool needsUpdate = true;
 
 
         public void Init() {
-            manager = SimulationManager2D.Instance;
+            manager = SimulationManager.Instance;
             SetBuffers();
             UpdateSettings();
 

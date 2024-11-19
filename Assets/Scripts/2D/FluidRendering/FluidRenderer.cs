@@ -7,7 +7,7 @@ namespace _2D {
         VelocityMagnitude
     }
 
-    public class FluidRenderer2D : MonoBehaviour {
+    public class FluidRenderer : MonoBehaviour {
 
         [Header("Display Settings")]
         [SerializeField, Min(3)] int numSides = 10;
@@ -27,14 +27,14 @@ namespace _2D {
         [SerializeField] Material particleMaterial;
         
         // Private fields
-        SimulationManager2D manager;
+        SimulationManager manager;
         ComputeBuffer argsBuffer;
         Bounds bounds;
         bool needsUpdate = true;
 
 
         public void Init() {
-            manager = SimulationManager2D.Instance;
+            manager = SimulationManager.Instance;
             SetBuffers();
             UpdateSettings();
         }
@@ -47,7 +47,7 @@ namespace _2D {
         void UpdateSettings() {
             if (needsUpdate) {
                 bounds = new Bounds(transform.position, Vector3.one * 20000);
-                particleMesh = ConvexMeshGenerator2D.GenerateMesh(numSides);
+                particleMesh = ConvexMeshGenerator.GenerateMesh(numSides);
                 argsBuffer?.Release();
                 argsBuffer = GraphicsHelper.CreateArgsBuffer(particleMesh, manager.numParticles);
 

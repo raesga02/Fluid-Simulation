@@ -11,7 +11,7 @@ namespace _2D {
     }
 
     [System.Serializable]
-    public static class ConvexMeshGenerator2D {
+    public static class ConvexMeshGenerator {
 
         public static Mesh GenerateMesh(int numSides, float initialAngle = 0f) {
             return new Mesh { 

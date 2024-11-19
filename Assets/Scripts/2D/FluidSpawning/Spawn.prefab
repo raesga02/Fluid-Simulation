@@ -41,14 +41,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 126585036043441785}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 742867399a8dcd945a6588966420c5e4, type: 3}
+  m_Script: {fileID: 11500000, guid: f5758d13538dc40429f93bcd2fd0b3e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   numParticles: 1000
-  spawnSize: {x: 10, y: 10}
+  spawnSize: {x: 1, y: 1}
   initialVelocity: {x: 0, y: 0}
+  areaMultiplier: 1
   positionJitter: 1
   velocityJitter: 1
-  computedParticlesPerAxis: {x: 32, y: 32}
-  computedSpacing: {x: 0.3125, y: 0.3125}
+  computedParticlesPerAxis: {x: 0, y: 0}
+  computedSpacing: {x: 0, y: 0}
   drawSpawnBounds: 1
