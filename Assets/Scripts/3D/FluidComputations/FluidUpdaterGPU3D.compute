@@ -1,0 +1,265 @@
+// Kernels
+#pragma kernel ApplyExternalForces
+#pragma kernel ComputeSpatialHashes
+#pragma kernel BitonicMergeStep
+#pragma kernel BuildSpatialHashLookup
+#pragma kernel CalculateDensities
+#pragma kernel CalculatePressures
+#pragma kernel ApplyPressureForce
+#pragma kernel ApplyViscosityForce
+#pragma kernel IntegratePosition
+#pragma kernel HandleCollisions
+
+#define BLOCK_SIZE 64
+
+// Helpers
+#include "FluidPhysicsHelper3D.hlsl"
+#include "SpatialHashHelper3D.hlsl"
+#include "../FluidColliders/FluidCollisionsHelper.hlsl"
+
+// Shader properties (Common data)
+float _deltaTime;
+int _numParticles;
+float2 _gravity;
+float _particleMass;
+float _particleRadius;
+float _smoothingLength;
+float _restDensity;
+float _bulkModulus;
+float _dynamicViscosity;
+
+int _paddedNumParticles;
+int _mergeSize;
+int _compareDist;
+
+int _numColliders;
+float _collisionDamping;
+
+
+// Structured buffers (Per instance data)
+RWStructuredBuffer<float2> _Positions;
+RWStructuredBuffer<float2> _PredictedPositions;
+RWStructuredBuffer<float2> _Velocities;
+RWStructuredBuffer<float> _Densities;
+RWStructuredBuffer<float> _Pressures;
+RWStructuredBuffer<int2> _SortedSpatialHashedIndices;
+RWStructuredBuffer<int2> _LookupHashIndices;
+
+
+// Helper functions
+
+bool IndexOutOfRange(int particleIndex, int max) {
+    return particleIndex >= max;
+}
+
+int Compare(int i, int j) {
+    return CompareKeyFromHash(_SortedSpatialHashedIndices[i][1], _SortedSpatialHashedIndices[j][1], _numParticles * 2);
+}
+
+void Exchange(int i, int j) {
+    int2 tmp = _SortedSpatialHashedIndices[i];
+    _SortedSpatialHashedIndices[i] = _SortedSpatialHashedIndices[j];
+    _SortedSpatialHashedIndices[j] = tmp;
+}
+
+
+// Kernels
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+    _Velocities[id.x] += _gravity * _deltaTime;
+    _PredictedPositions[id.x] = _Positions[id.x] + _Velocities[id.x] * _deltaTime;
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+    
+    int2 cellPos = GetCellPos(_PredictedPositions[id.x], _smoothingLength);
+    int hash = ComputeHash(cellPos);
+    _SortedSpatialHashedIndices[id.x] = int2(id.x, hash);
+    
+    // Reset lookupHashIndices (size = 0, first = max int)
+    _LookupHashIndices[id.x] = int2(0, 0x7FFFFFFF);
+    _LookupHashIndices[id.x + _numParticles] = int2(0, 0x7FFFFFFF);
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _paddedNumParticles)) { return; }
+    int i = id.x;
+    int j = i ^ _compareDist;
+
+    if (j > i) {
+        if (((i & _mergeSize) == 0) == (Compare(i, j) > 0)) {
+            Exchange(i, j);
+        }
+    }
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+
+    int hash = _SortedSpatialHashedIndices[id.x][1];
+    int key = GetKey(hash, _numParticles * 2);
+    int candidateFirst = id.x;
+
+    InterlockedAdd(_LookupHashIndices[key][0], 1);
+    InterlockedMin(_LookupHashIndices[key][1], candidateFirst);
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void CalculateDensities(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+
+    float2 srcPos = _PredictedPositions[id.x];
+    int2 srcCellPos = GetCellPos(srcPos, _smoothingLength);
+    
+    float rawKernelAcc = 0.0;
+    for (int i = 0; i < 9; i++) {
+        int2 nbrCellPos = srcCellPos + neighborOffsets[i];
+        int nbrHash = ComputeHash(nbrCellPos);
+        int nbrKey = GetKey(nbrHash, _numParticles * 2);
+        int2 lookupData = _LookupHashIndices[nbrKey];
+
+        if (lookupData[0] == 0) { continue; } // No particles with that key
+
+        int count = lookupData[0];
+        int first = lookupData[1];
+        
+        for (int j = first; j < first + count; j++) {
+            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+            
+            int nbrIdx = _SortedSpatialHashedIndices[j][0];
+            float2 r = _PredictedPositions[nbrIdx] - srcPos;
+            float r2 = dot(r, r);
+
+            if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Discard far away particles
+
+            float rL = sqrt(r2);
+            rawKernelAcc += DensityKernel(rL, _smoothingLength);
+        }
+    }
+
+    _Densities[id.x] = _particleMass * rawKernelAcc;
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void CalculatePressures(int3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+    _Pressures[id.x] = LinearStateEquation(_Densities[id.x], _restDensity, _bulkModulus);
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+
+    float2 srcPos = _PredictedPositions[id.x];
+    float srcDensity = _Densities[id.x];
+    float srcPressure = _Pressures[id.x];
+    int2 srcCellPos = GetCellPos(srcPos, _smoothingLength);
+    
+    float2 pressureGradient = float2(0.0, 0.0);
+    for (int i = 0; i < 9; i++) {
+        int2 nbrCellPos = srcCellPos + neighborOffsets[i];
+        int nbrHash = ComputeHash(nbrCellPos);
+        int nbrKey = GetKey(nbrHash, _numParticles * 2);
+        int2 lookupData = _LookupHashIndices[nbrKey];
+
+        if (lookupData[0] == 0) { continue; } // No particles with that key
+
+        int count = lookupData[0];
+        int first = lookupData[1];
+        
+        for (int j = first; j < first + count; j++) {
+            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+
+            int nbrIdx = _SortedSpatialHashedIndices[j][0];
+            float2 r = _PredictedPositions[nbrIdx] - srcPos;
+            float r2 = dot(r, r);
+            
+            if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Discard far away particles
+            
+            float nbrDensity = _Densities[nbrIdx];
+            float nbrPressure = _Pressures[nbrIdx];
+            float sharedPressureFactor = (srcPressure + nbrPressure) / (nbrDensity * 2.0);
+            pressureGradient += sharedPressureFactor * PressureKernel(float3(r.xy, 0.0), _smoothingLength).xy;
+        }
+    }
+
+    pressureGradient = _particleMass * pressureGradient;
+    float2 pressureForce = pressureGradient / srcDensity;
+    _Velocities[id.x] += pressureForce * _deltaTime;
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+
+    float2 srcPos = _PredictedPositions[id.x];
+    float srcDensity = _Densities[id.x];
+    float2 srcVelocity = _Velocities[id.x];
+    int2 srcCellPos = GetCellPos(srcPos, _smoothingLength);
+    
+    float2 viscosityBodyForce = float2(0.0, 0.0);
+    for (int i = 0; i < 9; i++) {
+        int2 nbrCellPos = srcCellPos + neighborOffsets[i];
+        int nbrHash = ComputeHash(nbrCellPos);
+        int nbrKey = GetKey(nbrHash, _numParticles * 2);
+        int2 lookupData = _LookupHashIndices[nbrKey];
+
+        if (lookupData[0] == 0) { continue; } // No particles with that key
+
+        int count = lookupData[0];
+        int first = lookupData[1];
+        
+        for (int j = first; j < first + count; j++) {
+            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+
+            int nbrIdx = _SortedSpatialHashedIndices[j][0];
+            float2 r = _PredictedPositions[nbrIdx] - srcPos;
+            float r2 = dot(r, r);
+            
+            if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Discard far away particles
+            
+            float2 nbrVelocity = _Velocities[nbrIdx];
+            float nbrDensity = _Densities[nbrIdx];
+            viscosityBodyForce += ((nbrVelocity - srcVelocity) / nbrDensity) * ViscosityKernel(float3(r.xy, 0.0), _smoothingLength).xy;
+        }
+    }
+    viscosityBodyForce = _dynamicViscosity * _particleMass * viscosityBodyForce;
+    float2 viscosityForce = viscosityBodyForce / srcDensity;
+    _Velocities[id.x] += viscosityBodyForce * _deltaTime;
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void IntegratePosition(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+    _Positions[id.x] += _Velocities[id.x] * _deltaTime;
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void HandleCollisions(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+
+    for (int i = 0; i < _numColliders; i++) {
+        ParticleCollider particle = { _Positions[id.x], _particleRadius };
+        SimulationCollider lookup = _CollidersLookup[i];
+
+        if (lookup.isBounds == 0) {
+            CollisionDisplacement response = GetSolidCollisionResponse(particle, i);
+            if (response.magnitude != 0.0) {
+                _Positions[id.x] += response.magnitude * response.direction;
+                _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], response.direction, _collisionDamping);
+            }
+        }
+        else if (lookup.isBounds == 1) {
+            HollowCollisionDisplacement response = GetHollowCollisionResponse(particle, i);
+            _Positions[id.x] += response.displacement;
+            _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], response.normal, _collisionDamping);
+            _Velocities[id.x] += response.displacement * GetVelocityAdjustment(_Velocities[id.x], response.quadrant, _gravity);
+        }
+    }  
+}
