@@ -45,22 +45,22 @@ namespace _3D {
         }
 
         void UpdateSettings() {
-            if (needsUpdate) {
-                bounds = new Bounds(transform.position, Vector3.one * 20000);
-                particleMesh = ConvexMeshGenerator.GenerateMesh(numSides);
-                argsBuffer?.Release();
-                argsBuffer = GraphicsHelper.CreateArgsBuffer(particleMesh, manager.numParticles);
+            if (!needsUpdate) { return; }
+            
+            bounds = new Bounds(transform.position, Vector3.one * 20000);
+            particleMesh = ConvexMeshGenerator.GenerateMesh(numSides);
+            argsBuffer?.Release();
+            argsBuffer = GraphicsHelper.CreateArgsBuffer(particleMesh, manager.numParticles);
 
-                // Shader properties
-                particleMaterial.SetFloat("_DisplaySize", independentSizing ? independentDisplaySize : manager.particleRadius * displaySizeMultiplier);
-                particleMaterial.SetFloat("_BlendFactor", blendFactor);
-                particleMaterial.SetInteger("_ColoringMode", colorMode.GetHashCode());
-                particleMaterial.SetColor("_FlatParticleColor", flatParticleColor);
-                particleMaterial.SetFloat("_MaxDisplayVelocity", maxDisplayVelocity);
-                particleMaterial.SetTexture("_ColorGradientTex", GetTex2DFromGradient());
+            // Shader properties
+            particleMaterial.SetFloat("_DisplaySize", independentSizing ? independentDisplaySize : manager.particleRadius * displaySizeMultiplier);
+            particleMaterial.SetFloat("_BlendFactor", blendFactor);
+            particleMaterial.SetInteger("_ColoringMode", colorMode.GetHashCode());
+            particleMaterial.SetColor("_FlatParticleColor", flatParticleColor);
+            particleMaterial.SetFloat("_MaxDisplayVelocity", maxDisplayVelocity);
+            particleMaterial.SetTexture("_ColorGradientTex", GetTex2DFromGradient());
 
-                needsUpdate = false;
-            }
+            needsUpdate = false;
         }
 
         public void RenderFluid() {

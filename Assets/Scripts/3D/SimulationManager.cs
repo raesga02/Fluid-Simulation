@@ -70,9 +70,9 @@ namespace _3D {
         }
 
         void InstantiateComputeBuffers() {
-            positionsBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
-            predictedPosBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
-            velocitiesBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
+            positionsBuffer = new ComputeBuffer(numParticles, sizeof(float) * 3);
+            predictedPosBuffer = new ComputeBuffer(numParticles, sizeof(float) * 3);
+            velocitiesBuffer = new ComputeBuffer(numParticles, sizeof(float) * 3);
             densitiesBuffer = new ComputeBuffer(numParticles, sizeof(float));
             pressuresBuffer = new ComputeBuffer(numParticles, sizeof(float));
             

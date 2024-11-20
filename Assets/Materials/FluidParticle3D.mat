@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: FluidParticle
-  m_Shader: {fileID: 4800000, guid: ec84d3e1a81f0cb498cf8102a726bf9e, type: 3}
+  m_Name: FluidParticle3D
+  m_Shader: {fileID: 4800000, guid: 7a2377cf5bceca04e81b56b8f97600dd, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []

@@ -7,7 +7,7 @@ namespace _3D {
         [Header("General Settings")]
         [SerializeField] int blockSize = 32;
         [SerializeField, Min(0f)] float particleMass;
-        [SerializeField] Vector2 gravity = new Vector2(0.0f, -9.81f);
+        [SerializeField] Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
 
         [Header("Density Calculation Settings")]
         [SerializeField, Min(0.0001f)] float smoothingLength;
@@ -51,9 +51,11 @@ namespace _3D {
             SetBuffers();
             UpdateSettings();
 
+            /*
             // Resolve initial collisions between spawners and colliders
             int groups = GraphicsHelper.ComputeThreadGroups1D(manager.numParticles, blockSize);
             computeShader.Dispatch(handleCollisionsKernel, groups, 1, 1);
+            */
         }
 
         void SetBuffers() {
@@ -98,11 +100,11 @@ namespace _3D {
             int groups = GraphicsHelper.ComputeThreadGroups1D(manager.numParticles, blockSize);
             UpdateSettings();
             computeShader.Dispatch(applyExternalForcesKernel, groups, 1, 1);
-            PrepareNeighborSearchData(groups);
-            computeShader.Dispatch(calculateDensitiesKernel, groups, 1, 1);
-            computeShader.Dispatch(calculatePressuresKernel, groups, 1, 1);
-            computeShader.Dispatch(applyPressureForceKernel, groups, 1, 1);
-            computeShader.Dispatch(applyViscosityForceKernel, groups, 1, 1);
+            //PrepareNeighborSearchData(groups);
+            //computeShader.Dispatch(calculateDensitiesKernel, groups, 1, 1);
+            //computeShader.Dispatch(calculatePressuresKernel, groups, 1, 1);
+            //computeShader.Dispatch(applyPressureForceKernel, groups, 1, 1);
+            //computeShader.Dispatch(applyViscosityForceKernel, groups, 1, 1);
             computeShader.Dispatch(integratePositionKernel, groups, 1, 1);
             computeShader.Dispatch(handleCollisionsKernel, groups, 1, 1);
         }

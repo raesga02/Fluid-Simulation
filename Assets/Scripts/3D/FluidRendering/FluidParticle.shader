@@ -1,10 +1,10 @@
-Shader "Custom/FluidParticle"{
+Shader "Custom/FluidParticle3D"{
     Properties {
         _DisplaySize ("Display Size", Float) = 1.0
         _BlendFactor ("Blend Factor", Float) = 1.0
         _ColoringMode ("Coloring Mode", Integer) = 1
         _FlatParticleColor ("Flat Particle Color", Color) = (0.1, 0.3, 1, 1)
-        _MaxDisplayVelocity ("Max Display Velocity", float) = 20.0
+        _MaxDisplayVelocity ("Max Display Velocity", Float) = 20.0
         _ColorGradientTex ("Color Gradient Texture", 2D) = "white" {}
     }
     SubShader {
@@ -33,8 +33,8 @@ Shader "Custom/FluidParticle"{
             sampler2D _ColorGradientTex;
 
             // Structured buffers (Per instance data)
-            StructuredBuffer<float2> Positions;
-            StructuredBuffer<float2> Velocities;
+            StructuredBuffer<float3> Positions;
+            StructuredBuffer<float3> Velocities;
 
             struct MeshData {
                 float4 vertex : POSITION;
@@ -52,7 +52,7 @@ Shader "Custom/FluidParticle"{
             Interpolators vert (MeshData v, uint instanceID : SV_InstanceID) {
                 Interpolators o;
 
-                float4 obj_particleCentre = mul(unity_WorldToObject, float4(Positions[instanceID], 0.0, 1.0));
+                float4 obj_particleCentre = mul(unity_WorldToObject, float4(Positions[instanceID].xyz, 1.0));
                 float4 obj_finalVertPos = obj_particleCentre + v.vertex * _DisplaySize;
                 
                 o.position = UnityObjectToClipPos(obj_finalVertPos);

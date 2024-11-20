@@ -4,8 +4,8 @@ using UnityEngine;
 namespace _3D {
 
     public struct FluidData {
-        public Vector2[] positions;
-        public Vector2[] velocities;
+        public Vector3[] positions;
+        public Vector3[] velocities;
         public float[] densities;
         public float[] pressures;
         public Vector2Int[] sortedSpatialHashedIndices;
@@ -27,8 +27,8 @@ namespace _3D {
 
             FluidData[] spawnersData = spawners.Select(spawner => spawner.Spawn()).ToArray();
 
-            Vector2[] positions = FlattenField(spawnersData, f => f.positions);
-            Vector2[] velocities = FlattenField(spawnersData, f => f.velocities);
+            Vector3[] positions = FlattenField(spawnersData, f => f.positions);
+            Vector3[] velocities = FlattenField(spawnersData, f => f.velocities);
             float[] densities = FlattenField(spawnersData, f => f.densities);
             float[] pressures = FlattenField(spawnersData, f => f.pressures);
 

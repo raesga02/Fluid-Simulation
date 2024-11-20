@@ -20,7 +20,7 @@
 // Shader properties (Common data)
 float _deltaTime;
 int _numParticles;
-float2 _gravity;
+float3 _gravity;
 float _particleMass;
 float _particleRadius;
 float _smoothingLength;
@@ -37,9 +37,9 @@ float _collisionDamping;
 
 
 // Structured buffers (Per instance data)
-RWStructuredBuffer<float2> _Positions;
-RWStructuredBuffer<float2> _PredictedPositions;
-RWStructuredBuffer<float2> _Velocities;
+RWStructuredBuffer<float3> _Positions;
+RWStructuredBuffer<float3> _PredictedPositions;
+RWStructuredBuffer<float3> _Velocities;
 RWStructuredBuffer<float> _Densities;
 RWStructuredBuffer<float> _Pressures;
 RWStructuredBuffer<int2> _SortedSpatialHashedIndices;
@@ -68,12 +68,13 @@ void Exchange(int i, int j) {
 [numthreads(BLOCK_SIZE, 1, 1)]
 void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
-    _Velocities[id.x] += _gravity * _deltaTime;
-    _PredictedPositions[id.x] = _Positions[id.x] + _Velocities[id.x] * _deltaTime;
+    _Velocities[id.x].xy += _gravity.xy * _deltaTime;
+    _PredictedPositions[id.x].xy = _Positions[id.x].xy + _Velocities[id.x].xy * _deltaTime;
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
+    /*
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
     
     int2 cellPos = GetCellPos(_PredictedPositions[id.x], _smoothingLength);
@@ -83,10 +84,12 @@ void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
     // Reset lookupHashIndices (size = 0, first = max int)
     _LookupHashIndices[id.x] = int2(0, 0x7FFFFFFF);
     _LookupHashIndices[id.x + _numParticles] = int2(0, 0x7FFFFFFF);
+    */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
+    /*
     if (IndexOutOfRange(id.x, _paddedNumParticles)) { return; }
     int i = id.x;
     int j = i ^ _compareDist;
@@ -96,10 +99,12 @@ void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
             Exchange(i, j);
         }
     }
+        */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
+    /*
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
     int hash = _SortedSpatialHashedIndices[id.x][1];
@@ -108,10 +113,12 @@ void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
 
     InterlockedAdd(_LookupHashIndices[key][0], 1);
     InterlockedMin(_LookupHashIndices[key][1], candidateFirst);
+    */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void CalculateDensities(uint3 id : SV_DispatchThreadID) {
+    /*
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
     float2 srcPos = _PredictedPositions[id.x];
@@ -144,6 +151,7 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
     }
 
     _Densities[id.x] = _particleMass * rawKernelAcc;
+    */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
@@ -154,6 +162,7 @@ void CalculatePressures(int3 id : SV_DispatchThreadID) {
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
+    /*
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
     float2 srcPos = _PredictedPositions[id.x];
@@ -192,10 +201,12 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
     pressureGradient = _particleMass * pressureGradient;
     float2 pressureForce = pressureGradient / srcDensity;
     _Velocities[id.x] += pressureForce * _deltaTime;
+    */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
+    /*
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
     float2 srcPos = _PredictedPositions[id.x];
@@ -232,12 +243,13 @@ void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
     viscosityBodyForce = _dynamicViscosity * _particleMass * viscosityBodyForce;
     float2 viscosityForce = viscosityBodyForce / srcDensity;
     _Velocities[id.x] += viscosityBodyForce * _deltaTime;
+    */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void IntegratePosition(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
-    _Positions[id.x] += _Velocities[id.x] * _deltaTime;
+    _Positions[id.x].xy += _Velocities[id.x].xy * _deltaTime;
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
@@ -245,21 +257,21 @@ void HandleCollisions(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
     for (int i = 0; i < _numColliders; i++) {
-        ParticleCollider particle = { _Positions[id.x], _particleRadius };
+        ParticleCollider particle = { _Positions[id.x].xy, _particleRadius };
         SimulationCollider lookup = _CollidersLookup[i];
 
         if (lookup.isBounds == 0) {
             CollisionDisplacement response = GetSolidCollisionResponse(particle, i);
             if (response.magnitude != 0.0) {
-                _Positions[id.x] += response.magnitude * response.direction;
-                _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], response.direction, _collisionDamping);
+                _Positions[id.x].xy += response.magnitude * response.direction;
+                _Velocities[id.x].xy = ReflectAndDampVelocity(_Velocities[id.x].xy, response.direction, _collisionDamping);
             }
         }
         else if (lookup.isBounds == 1) {
             HollowCollisionDisplacement response = GetHollowCollisionResponse(particle, i);
-            _Positions[id.x] += response.displacement;
-            _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], response.normal, _collisionDamping);
-            _Velocities[id.x] += response.displacement * GetVelocityAdjustment(_Velocities[id.x], response.quadrant, _gravity);
+            _Positions[id.x].xy += response.displacement;
+            _Velocities[id.x].xy = ReflectAndDampVelocity(_Velocities[id.x].xy, response.normal, _collisionDamping);
+            _Velocities[id.x].xy += response.displacement * GetVelocityAdjustment(_Velocities[id.x].xy, response.quadrant, _gravity.xy);
         }
     }  
 }
