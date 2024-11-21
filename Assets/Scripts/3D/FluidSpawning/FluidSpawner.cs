@@ -90,7 +90,7 @@ namespace _3D {
         public float SpawnArea() => areaMultiplier * spawnSize.x * spawnSize.y;
 
         void OnDrawGizmos() {
-            if (drawSpawnBounds /*&& !Application.isPlaying*/) {
+            if (drawSpawnBounds && !Application.isPlaying) {
                 var matrix = Gizmos.matrix;
                 Gizmos.matrix = transform.localToWorldMatrix;
                 Gizmos.color = Color.magenta;
