@@ -104,7 +104,7 @@ namespace _3D {
             computeShader.Dispatch(calculateDensitiesKernel, groups, 1, 1);
             computeShader.Dispatch(calculatePressuresKernel, groups, 1, 1);
             computeShader.Dispatch(applyPressureForceKernel, groups, 1, 1);
-            //computeShader.Dispatch(applyViscosityForceKernel, groups, 1, 1);
+            computeShader.Dispatch(applyViscosityForceKernel, groups, 1, 1);
             computeShader.Dispatch(integratePositionKernel, groups, 1, 1);
             computeShader.Dispatch(handleCollisionsKernel, groups, 1, 1);
         }

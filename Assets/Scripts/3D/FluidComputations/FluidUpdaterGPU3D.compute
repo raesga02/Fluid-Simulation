@@ -196,17 +196,16 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
-    /*
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
-    float2 srcPos = _PredictedPositions[id.x];
+    float3 srcPos = _PredictedPositions[id.x];
     float srcDensity = _Densities[id.x];
-    float2 srcVelocity = _Velocities[id.x];
-    int2 srcCellPos = GetCellPos(srcPos, _smoothingLength);
+    float3 srcVelocity = _Velocities[id.x];
+    int3 srcCellPos = GetCellPos(srcPos, _smoothingLength);
     
-    float2 viscosityBodyForce = float2(0.0, 0.0);
+    float3 viscosityBodyForce = float3(0.0, 0.0, 0.0);
     for (int i = 0; i < 9; i++) {
-        int2 nbrCellPos = srcCellPos + neighborOffsets[i];
+        int3 nbrCellPos = srcCellPos + neighborOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
         int2 lookupData = _LookupHashIndices[nbrKey];
@@ -220,20 +219,19 @@ void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
             if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
 
             int nbrIdx = _SortedSpatialHashedIndices[j][0];
-            float2 r = _PredictedPositions[nbrIdx] - srcPos;
+            float3 r = _PredictedPositions[nbrIdx] - srcPos;
             float r2 = dot(r, r);
             
             if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Discard far away particles
             
-            float2 nbrVelocity = _Velocities[nbrIdx];
+            float3 nbrVelocity = _Velocities[nbrIdx];
             float nbrDensity = _Densities[nbrIdx];
-            viscosityBodyForce += ((nbrVelocity - srcVelocity) / nbrDensity) * ViscosityKernel(float3(r.xy, 0.0), _smoothingLength).xy;
+            viscosityBodyForce += ((nbrVelocity - srcVelocity) / nbrDensity) * ViscosityKernel(r, _smoothingLength);
         }
     }
     viscosityBodyForce = _dynamicViscosity * _particleMass * viscosityBodyForce;
-    float2 viscosityForce = viscosityBodyForce / srcDensity;
+    float3 viscosityForce = viscosityBodyForce / srcDensity;
     _Velocities[id.x] += viscosityBodyForce * _deltaTime;
-    */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
