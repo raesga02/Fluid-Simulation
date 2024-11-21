@@ -1,0 +1,21 @@
+#pragma kernel CheckCollision
+
+#define BLOCK_SIZE 64
+
+RWStructuredBuffer<float3> _Vertices;
+RWStructuredBuffer<float3> _Normals;
+RWStructuredBuffer<int3> _Triangles;
+RWStructuredBuffer<int> _CollisionResults;
+
+int _numFaces;
+
+float4 _position;
+float _radius;
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void CheckCollision (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x != 0) { return; }
+
+    _CollisionResults[id.x] = 0;
+}
