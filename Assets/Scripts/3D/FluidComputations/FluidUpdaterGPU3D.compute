@@ -112,15 +112,14 @@ void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void CalculateDensities(uint3 id : SV_DispatchThreadID) {
-    /*
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
-    float2 srcPos = _PredictedPositions[id.x];
-    int2 srcCellPos = GetCellPos(srcPos, _smoothingLength);
+    float3 srcPos = _PredictedPositions[id.x];
+    int3 srcCellPos = GetCellPos(srcPos, _smoothingLength);
     
     float rawKernelAcc = 0.0;
     for (int i = 0; i < 9; i++) {
-        int2 nbrCellPos = srcCellPos + neighborOffsets[i];
+        int3 nbrCellPos = srcCellPos + neighborOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
         int2 lookupData = _LookupHashIndices[nbrKey];
@@ -134,7 +133,7 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
             if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
             
             int nbrIdx = _SortedSpatialHashedIndices[j][0];
-            float2 r = _PredictedPositions[nbrIdx] - srcPos;
+            float3 r = _PredictedPositions[nbrIdx] - srcPos;
             float r2 = dot(r, r);
 
             if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Discard far away particles
@@ -145,7 +144,6 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
     }
 
     _Densities[id.x] = _particleMass * rawKernelAcc;
-    */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
@@ -156,17 +154,16 @@ void CalculatePressures(int3 id : SV_DispatchThreadID) {
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
-    /*
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
-    float2 srcPos = _PredictedPositions[id.x];
+    float3 srcPos = _PredictedPositions[id.x];
     float srcDensity = _Densities[id.x];
     float srcPressure = _Pressures[id.x];
-    int2 srcCellPos = GetCellPos(srcPos, _smoothingLength);
+    int3 srcCellPos = GetCellPos(srcPos, _smoothingLength);
     
-    float2 pressureGradient = float2(0.0, 0.0);
+    float3 pressureGradient = float3(0.0, 0.0, 0.0);
     for (int i = 0; i < 9; i++) {
-        int2 nbrCellPos = srcCellPos + neighborOffsets[i];
+        int3 nbrCellPos = srcCellPos + neighborOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
         int2 lookupData = _LookupHashIndices[nbrKey];
@@ -180,7 +177,7 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
             if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
 
             int nbrIdx = _SortedSpatialHashedIndices[j][0];
-            float2 r = _PredictedPositions[nbrIdx] - srcPos;
+            float3 r = _PredictedPositions[nbrIdx] - srcPos;
             float r2 = dot(r, r);
             
             if (r2 >= _smoothingLength * _smoothingLength) { continue; } // Discard far away particles
@@ -188,14 +185,13 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
             float nbrDensity = _Densities[nbrIdx];
             float nbrPressure = _Pressures[nbrIdx];
             float sharedPressureFactor = (srcPressure + nbrPressure) / (nbrDensity * 2.0);
-            pressureGradient += sharedPressureFactor * PressureKernel(float3(r.xy, 0.0), _smoothingLength).xy;
+            pressureGradient += sharedPressureFactor * PressureKernel(r, _smoothingLength);
         }
     }
 
     pressureGradient = _particleMass * pressureGradient;
-    float2 pressureForce = pressureGradient / srcDensity;
+    float3 pressureForce = pressureGradient / srcDensity;
     _Velocities[id.x] += pressureForce * _deltaTime;
-    */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
