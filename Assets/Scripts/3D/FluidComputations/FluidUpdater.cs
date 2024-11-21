@@ -100,7 +100,7 @@ namespace _3D {
             int groups = GraphicsHelper.ComputeThreadGroups1D(manager.numParticles, blockSize);
             UpdateSettings();
             computeShader.Dispatch(applyExternalForcesKernel, groups, 1, 1);
-            //PrepareNeighborSearchData(groups);
+            PrepareNeighborSearchData(groups);
             //computeShader.Dispatch(calculateDensitiesKernel, groups, 1, 1);
             //computeShader.Dispatch(calculatePressuresKernel, groups, 1, 1);
             //computeShader.Dispatch(applyPressureForceKernel, groups, 1, 1);

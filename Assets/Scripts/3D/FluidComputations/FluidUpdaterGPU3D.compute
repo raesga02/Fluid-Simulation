@@ -74,22 +74,19 @@ void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
-    /*
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
     
-    int2 cellPos = GetCellPos(_PredictedPositions[id.x], _smoothingLength);
+    int3 cellPos = GetCellPos(_PredictedPositions[id.x], _smoothingLength);
     int hash = ComputeHash(cellPos);
     _SortedSpatialHashedIndices[id.x] = int2(id.x, hash);
     
     // Reset lookupHashIndices (size = 0, first = max int)
     _LookupHashIndices[id.x] = int2(0, 0x7FFFFFFF);
     _LookupHashIndices[id.x + _numParticles] = int2(0, 0x7FFFFFFF);
-    */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
-    /*
     if (IndexOutOfRange(id.x, _paddedNumParticles)) { return; }
     int i = id.x;
     int j = i ^ _compareDist;
@@ -99,12 +96,10 @@ void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
             Exchange(i, j);
         }
     }
-        */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
-    /*
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
     int hash = _SortedSpatialHashedIndices[id.x][1];
@@ -113,7 +108,6 @@ void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
 
     InterlockedAdd(_LookupHashIndices[key][0], 1);
     InterlockedMin(_LookupHashIndices[key][1], candidateFirst);
-    */
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
