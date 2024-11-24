@@ -1,123 +1,136 @@
 using UnityEngine;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System;
+using UnityEditor.MPE;
+
+[Serializable]
+public struct CollisionDisplacement {
+    public float magnitude;
+    public Vector3 direction;
+};
+
 
 public class Collision3D : MonoBehaviour
 {
+    [Header("Test Settings")]
+    [SerializeField] bool checkCollision = true;
+    [SerializeField] bool checkAABBCollision = true;
+
     [Header("Collider info")]
-    [SerializeField] Vector3[] vertices;
-    [SerializeField] Vector3[] normals;
-    [SerializeField] Vector3Int[] triangles;
+    public ColliderData colliderData;
+    public CollisionDisplacement[] results;
+    public CollisionDisplacement[] aabbResults;
 
-    [SerializeField] const int numVertices = 8;
-    [SerializeField] const int numFaces = 12;
-
-    [Header("Draw Settings")]
-    [SerializeField] bool drawNormals = true;
-    
     [Header("References")]
+    [SerializeField] Collider3D collider3d;
     [SerializeField] Particle3D particle;
     [SerializeField] ComputeShader computeShader;
 
     // Compute buffers
     ComputeBuffer verticesBuffer;
-    ComputeBuffer normalsBuffer;
-    ComputeBuffer trianglesBuffer;
+    ComputeBuffer faceNormalsBuffer;
+    ComputeBuffer collidersLookupsBuffer;
     ComputeBuffer collisionResultsBuffer;
-
+    ComputeBuffer aabbCollisionResultsBuffer;
 
     private void InitializeBuffers() {
-        verticesBuffer = new ComputeBuffer(numVertices, sizeof(float) * 3);
-        normalsBuffer = new ComputeBuffer(numFaces, sizeof(float) * 3);
-        trianglesBuffer = new ComputeBuffer(numFaces, sizeof(int) * 3);
-        collisionResultsBuffer = new ComputeBuffer(1, sizeof(int));
+        // Alloc buffers
+        verticesBuffer = new ComputeBuffer(colliderData.vertices.Length, sizeof(float) * 3);
+        faceNormalsBuffer = new ComputeBuffer(colliderData.faceNormals.Length, sizeof(float) * 3);
+        collidersLookupsBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(ColliderLookup)));
+        collisionResultsBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(CollisionDisplacement)));
+        aabbCollisionResultsBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(CollisionDisplacement)));
 
-        GraphicsHelper.SetBufferKernels(computeShader, "_Vertices", verticesBuffer, 0);
-        GraphicsHelper.SetBufferKernels(computeShader, "_Normals", normalsBuffer, 0);
-        GraphicsHelper.SetBufferKernels(computeShader, "_Triangles", trianglesBuffer, 0);
-        GraphicsHelper.SetBufferKernels(computeShader, "_CollisionResults", collisionResultsBuffer, 0);
+        // Bind compute buffers
+        GraphicsHelper.SetBufferKernels(computeShader, "_Vertices", verticesBuffer, 0, 1);
+        GraphicsHelper.SetBufferKernels(computeShader, "_Normals", faceNormalsBuffer, 0, 1);
+        GraphicsHelper.SetBufferKernels(computeShader, "_CollidersLookup", collidersLookupsBuffer, 0, 1);
+        GraphicsHelper.SetBufferKernels(computeShader, "_CollisionResults", collisionResultsBuffer, 0, 1);
+        GraphicsHelper.SetBufferKernels(computeShader, "_AABBCollisionResults", aabbCollisionResultsBuffer, 0, 1);
 
-        verticesBuffer.SetData(vertices);
-        normalsBuffer.SetData(normals);
-        trianglesBuffer.SetData(triangles);
+        // Initialize data
+        verticesBuffer.SetData(colliderData.vertices);
+        faceNormalsBuffer.SetData(colliderData.faceNormals);
+        collidersLookupsBuffer.SetData(Enumerable.Repeat(new ColliderLookup { 
+            startIdx = 0, 
+            numVertices = colliderData.vertices.Length, 
+            numFaces = colliderData.faceNormals.Length,
+            isBounds = collider3d.bounceDirection == BounceDirection.INSIDE ? 1 : 0,
+            aabb = colliderData.aabb
+        },1).ToArray());
+        collisionResultsBuffer.SetData(Enumerable.Repeat(new CollisionDisplacement { magnitude = 0.0f, direction = Vector3.zero}, 1).ToArray());
+        aabbCollisionResultsBuffer.SetData(Enumerable.Repeat(new CollisionDisplacement { magnitude = 0.0f, direction = Vector3.zero}, 1).ToArray());
 
+        // Initialize compute shader variables
         computeShader.SetVector("_position", particle.transform.position);
         computeShader.SetFloat("_radius", particle.radius);
-
+        computeShader.SetInt("_numVertices", colliderData.vertices.Length);
+        computeShader.SetInt("_numFaces", colliderData.faceNormals.Length);
     }
 
     private void DestroyBuffers() {
         verticesBuffer?.Release();
-        normalsBuffer?.Release();
-        trianglesBuffer?.Release();
+        faceNormalsBuffer?.Release();
+        collidersLookupsBuffer?.Release();
         collisionResultsBuffer?.Release();
+        aabbCollisionResultsBuffer?.Release();
     }
 
-    private bool CheckCollision() {
+    private CollisionDisplacement CheckCollision() {
         int numGroups = GraphicsHelper.ComputeThreadGroups1D(1);
         computeShader.Dispatch(0, numGroups, 1, 1);
-        int[] results = new int[1];
+        results = new CollisionDisplacement[1];
         collisionResultsBuffer.GetData(results);
-        return results[0] == 1;
+        return results[0];
+    }
+
+    private CollisionDisplacement CheckAABBCollision() {
+        int numGroups = GraphicsHelper.ComputeThreadGroups1D(1);
+        computeShader.Dispatch(1, numGroups, 1, 1);
+        aabbResults = new CollisionDisplacement[1];
+        aabbCollisionResultsBuffer.GetData(aabbResults);
+        return aabbResults[0];
     }
 
     private void OnDrawGizmos() {
         ResetInfo();
         InitializeBuffers();
 
-        bool collided = CheckCollision();
+        if (checkCollision) {
+            CollisionDisplacement response = CheckCollision();
+            bool collided = response.magnitude != 0.0f;
+            collider3d.collided = collided;
 
-        for (int i = 0; i < numFaces; i++) {
-            int[] vertexIdx = new int[] { triangles[i].x, triangles[i].y, triangles[i].z };
-            Vector3[] triangleVertices = vertexIdx.Select(idx => vertices[idx]).ToArray();
-            Vector3 triangleCentre = (triangleVertices[0] + triangleVertices[1] + triangleVertices[2]) / 3;
-            Gizmos.color = collided ? Color.magenta : Color.gray;
-            Gizmos.DrawLineStrip(triangleVertices, true);
-
-            if (drawNormals) {
-                Vector3 normal = normals[i];
-                Gizmos.color = new Vector4(normal.x, normal.y, normal.z, 1.0f);
-                Gizmos.DrawLine(triangleCentre, triangleCentre + normal / 2);
+            if (collided) {
+                Vector3 newCentre = particle.transform.position + response.magnitude * response.direction;
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireSphere(newCentre, particle.radius);
             }
+        }
+        else {
+            collider3d.collided = false;
+        }
+
+        if (checkAABBCollision) {
+            CollisionDisplacement aabbResponse = CheckAABBCollision();
+            bool aabbCollided = aabbResponse.magnitude != 0.0f;
+            collider3d.aabbCollided = aabbCollided;
+
+            if (aabbCollided) {
+                Vector3 newCentre = particle.transform.position + aabbResponse.magnitude * aabbResponse.direction;
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawWireSphere(newCentre, particle.radius);
+            }
+        }
+        else {
+            collider3d.aabbCollided = false;
         }
 
         DestroyBuffers();
     }
 
-    void CalculateNormals() {
-        for (int i = 0; i < numFaces; i++) {
-            int[] vertexIdx = new int[] { triangles[i].x, triangles[i].y, triangles[i].z };
-            Vector3[] tVertices = vertexIdx.Select(idx => vertices[idx]).ToArray();
-            normals[i] = Vector3.Cross(tVertices[1] - tVertices[0], tVertices[2] - tVertices[0]).normalized;
-        }
-    }
-
     void ResetInfo() {
-        vertices = new Vector3[numVertices] {
-            new Vector3(-0.5f, -0.5f, -0.5f),
-            new Vector3( 0.5f, -0.5f, -0.5f),
-            new Vector3( 0.5f,  0.5f, -0.5f),
-            new Vector3(-0.5f,  0.5f, -0.5f),
-            new Vector3(-0.5f, -0.5f,  0.5f),
-            new Vector3( 0.5f, -0.5f,  0.5f),
-            new Vector3( 0.5f,  0.5f,  0.5f),
-            new Vector3(-0.5f,  0.5f,  0.5f)
-        };
-        transform.TransformPoints(vertices);
-        
-        CalculateNormals();
-        triangles = new Vector3Int[numFaces] {
-            new Vector3Int(0, 2, 1),
-            new Vector3Int(0, 3, 2),
-            new Vector3Int(0, 4, 3),
-            new Vector3Int(4, 7, 3),
-            new Vector3Int(4, 6, 7),
-            new Vector3Int(4, 5, 6),
-            new Vector3Int(5, 2, 6),
-            new Vector3Int(5, 1, 2),
-            new Vector3Int(5, 4, 1),
-            new Vector3Int(1, 4, 0),
-            new Vector3Int(2, 3, 7),
-            new Vector3Int(2, 7, 6)
-        };
+        colliderData = collider3d.GetData();
     }
 }

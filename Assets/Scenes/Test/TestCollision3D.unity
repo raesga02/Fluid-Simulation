@@ -96,7 +96,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: e3b7dbaffe1286446aa07059f4366d8d, type: 2}
   m_LightingSettings: {fileID: 0}
 --- !u!196 &4
 NavMeshSettings:
@@ -147,12 +147,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 715883228}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.288, y: 1.248, z: -1.223}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.102, y: 0.11, z: 0.038}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1702368607}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &715883230
 MonoBehaviour:
@@ -166,7 +166,57 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 249838a90c08f4f43889d2f99775871b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  radius: 0.25
+  radius: 0.1
+--- !u!1 &1186688891
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1186688893}
+  - component: {fileID: 1186688892}
+  m_Layer: 0
+  m_Name: Collider
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1186688892
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1186688891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e678f9b6b94e58447823e60bef59f5a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bounceDirection: 1
+  collided: 0
+  aabbCollided: 1
+  drawCollider: 1
+  drawNormals: 0
+  drawColliderAABB: 1
+--- !u!4 &1186688893
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1186688891}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1702368607}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1209105375
 GameObject:
   m_ObjectHideFlags: 0
@@ -382,7 +432,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1186688893}
+  - {fileID: 715883229}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1702368610
@@ -397,42 +449,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03f0f6ea34048654cbb4029c8ff6ac41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  vertices:
-  - {x: -0.5, y: -0.5, z: -0.5}
-  - {x: 0.5, y: -0.5, z: -0.5}
-  - {x: 0.5, y: 0.5, z: -0.5}
-  - {x: -0.5, y: 0.5, z: -0.5}
-  - {x: -0.5, y: -0.5, z: 0.5}
-  - {x: 0.5, y: -0.5, z: 0.5}
-  - {x: 0.5, y: 0.5, z: 0.5}
-  - {x: -0.5, y: 0.5, z: 0.5}
-  normals:
-  - {x: 0, y: 0, z: -1}
-  - {x: 0, y: 0, z: -1}
-  - {x: -1, y: 0, z: 0}
-  - {x: -1, y: 0, z: 0}
-  - {x: 0, y: 0, z: 1}
-  - {x: 0, y: 0, z: 1}
-  - {x: 1, y: -0, z: 0}
-  - {x: 1, y: 0, z: 0}
-  - {x: -0, y: -1, z: -0}
-  - {x: 0, y: -1, z: 0}
-  - {x: 0, y: 1, z: 0}
-  - {x: 0, y: 1, z: -0}
-  triangles:
-  - {x: 0, y: 2, z: 1}
-  - {x: 0, y: 3, z: 2}
-  - {x: 0, y: 4, z: 3}
-  - {x: 4, y: 7, z: 3}
-  - {x: 4, y: 6, z: 7}
-  - {x: 4, y: 5, z: 6}
-  - {x: 5, y: 2, z: 6}
-  - {x: 5, y: 1, z: 2}
-  - {x: 5, y: 4, z: 1}
-  - {x: 1, y: 4, z: 0}
-  - {x: 2, y: 3, z: 7}
-  - {x: 2, y: 7, z: 6}
-  drawNormals: 1
+  checkCollision: 0
+  checkAABBCollision: 1
+  results:
+  - magnitude: 0.07432461
+    direction: {x: -0.5193065, y: 0.8208315, z: -0.23781608}
+  aabbResults:
+  - magnitude: 0.49
+    direction: {x: 0, y: 1, z: 0}
+  collider3d: {fileID: 1186688892}
   particle: {fileID: 715883230}
   computeShader: {fileID: 7200000, guid: df624130369b26949bb37f3117f2927e, type: 3}
 --- !u!1660057539 &9223372036854775807
@@ -442,4 +467,3 @@ SceneRoots:
   - {fileID: 1209105378}
   - {fileID: 1604977008}
   - {fileID: 1702368607}
-  - {fileID: 715883229}
