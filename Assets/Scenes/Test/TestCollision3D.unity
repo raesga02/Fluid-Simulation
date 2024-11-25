@@ -148,7 +148,7 @@ Transform:
   m_GameObject: {fileID: 715883228}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.102, y: 0.11, z: 0.038}
+  m_LocalPosition: {x: -0.041, y: 0.356, z: -1.867}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -196,9 +196,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e678f9b6b94e58447823e60bef59f5a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bounceDirection: 1
+  bounceDirection: 0
   collided: 0
-  aabbCollided: 1
+  aabbCollided: 0
   drawCollider: 1
   drawNormals: 0
   drawColliderAABB: 1
@@ -210,13 +210,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1186688891}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0.35355338, y: -0.1464466, z: 0.35355338, w: 0.8535535}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1702368607}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 45, y: 0, z: 45}
 --- !u!1 &1209105375
 GameObject:
   m_ObjectHideFlags: 0
@@ -449,14 +449,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03f0f6ea34048654cbb4029c8ff6ac41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  checkCollision: 0
+  checkCollision: 1
   checkAABBCollision: 1
   results:
-  - magnitude: 0.07432461
-    direction: {x: -0.5193065, y: 0.8208315, z: -0.23781608}
+  - magnitude: 0
+    direction: {x: 0.000000014901161, y: 0.7071068, z: -0.7071068}
+    displacement: {x: 0, y: 0, z: 0}
   aabbResults:
-  - magnitude: 0.49
-    direction: {x: 0, y: 1, z: 0}
+  - magnitude: 0
+    direction: {x: 0, y: 0, z: 0}
+    displacement: {x: 0, y: 0, z: 0}
   collider3d: {fileID: 1186688892}
   particle: {fileID: 715883230}
   computeShader: {fileID: 7200000, guid: df624130369b26949bb37f3117f2927e, type: 3}

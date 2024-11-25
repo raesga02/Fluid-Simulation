@@ -8,6 +8,7 @@ using UnityEditor.MPE;
 public struct CollisionDisplacement {
     public float magnitude;
     public Vector3 direction;
+    public Vector3 displacement;
 };
 
 
@@ -59,7 +60,7 @@ public class Collision3D : MonoBehaviour
             isBounds = collider3d.bounceDirection == BounceDirection.INSIDE ? 1 : 0,
             aabb = colliderData.aabb
         },1).ToArray());
-        collisionResultsBuffer.SetData(Enumerable.Repeat(new CollisionDisplacement { magnitude = 0.0f, direction = Vector3.zero}, 1).ToArray());
+        collisionResultsBuffer.SetData(Enumerable.Repeat(new CollisionDisplacement { magnitude = 0.0f, direction = Vector3.zero, displacement = Vector3.zero}, 1).ToArray());
         aabbCollisionResultsBuffer.SetData(Enumerable.Repeat(new CollisionDisplacement { magnitude = 0.0f, direction = Vector3.zero}, 1).ToArray());
 
         // Initialize compute shader variables
@@ -103,8 +104,8 @@ public class Collision3D : MonoBehaviour
             collider3d.collided = collided;
 
             if (collided) {
-                Vector3 newCentre = particle.transform.position + response.magnitude * response.direction;
-                Gizmos.color = Color.cyan;
+                Vector3 newCentre = particle.transform.position + response.displacement;
+                Gizmos.color = collider3d.bounceDirection == BounceDirection.OUTSIDE ? Color.yellow : Color.green;
                 Gizmos.DrawWireSphere(newCentre, particle.radius);
             }
         }
@@ -118,8 +119,8 @@ public class Collision3D : MonoBehaviour
             collider3d.aabbCollided = aabbCollided;
 
             if (aabbCollided) {
-                Vector3 newCentre = particle.transform.position + aabbResponse.magnitude * aabbResponse.direction;
-                Gizmos.color = Color.yellow;
+                Vector3 newCentre = particle.transform.position + aabbResponse.displacement;
+                Gizmos.color = Color.cyan;
                 Gizmos.DrawWireSphere(newCentre, particle.radius);
             }
         }

@@ -75,12 +75,13 @@ public class Collider3D : MonoBehaviour
     private void DrawCollider() {
         var matrix = Gizmos.matrix;
         Gizmos.matrix = transform.localToWorldMatrix;
-        Gizmos.color = collided ? Color.magenta : Color.gray;
 
         if (bounceDirection == BounceDirection.OUTSIDE) { 
-            Gizmos.DrawMesh(mesh);
+            Gizmos.color = collided ? new Color(0.5f, 0.5f, 0.25f) : new Color(0.2f, 0.2f, 0.1f);
+            Gizmos.DrawWireMesh(mesh);
         }
         else { 
+            Gizmos.color = collided ? new Color(0.25f, 0.75f, 0.25f) : new Color(0.1f, 0.5f, 0.1f);
             Gizmos.DrawWireMesh(mesh);
         }
 
@@ -111,7 +112,7 @@ public class Collider3D : MonoBehaviour
 
         Vector3 size = aabb.max - aabb.min;
         Vector3 centre = aabb.min + size * 0.5f;
-        Gizmos.color = aabbCollided ? Color.magenta : Color.white;
+        Gizmos.color = aabbCollided ? new Color(0.25f, 0.25f, 0.75f) : new Color(0.1f, 0.1f, 0.5f);
         Gizmos.DrawWireCube(centre, size);
     }
 
