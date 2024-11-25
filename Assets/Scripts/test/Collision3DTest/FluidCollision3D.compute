@@ -24,7 +24,7 @@ struct AABB {
 struct SimulationCollider {
     int startIdx;
     int numVertices;
-    int numFaces;
+    int numCollisionNormals;
     int isBounds;
     AABB aabb;
 };
@@ -43,7 +43,7 @@ RWStructuredBuffer<CollisionDisplacement> _CollisionResults;
 RWStructuredBuffer<CollisionDisplacement> _AABBCollisionResults;
 
 int _numVertices;
-int _numFaces;
+int _numCollisionNormals;
 
 float3 _position;
 float _radius;
@@ -88,16 +88,16 @@ CollisionDisplacement GetSolidCollisionResponse(ParticleCollider particle, int c
     //    return collisionResponse;
     //}
 
-    for (int i = 0; i < collider.numFaces; i++) {
-        float3 faceNormal = _Normals[collider.startIdx + i];
-        ProjectionLine particleProjection = ProjectParticle(particle, faceNormal);
-        ProjectionLine colliderProjection = ProjectCollider(collider, faceNormal);
+    for (int i = 0; i < collider.numCollisionNormals; i++) {
+        float3 normal = _Normals[collider.startIdx + i];
+        ProjectionLine particleProjection = ProjectParticle(particle, normal);
+        ProjectionLine colliderProjection = ProjectCollider(collider, normal);
         float responseMagnitude = GetCollisionResponseOverLine(particleProjection, colliderProjection);
 
         // If there is no overlap
         if (responseMagnitude == 0.0) {
             collisionResponse.magnitude = 0.0;
-            collisionResponse.direction = faceNormal;
+            collisionResponse.direction = normal;
             collisionResponse.displacement = float3(0.0, 0.0, 0.0);
             return collisionResponse;
         }
@@ -105,8 +105,8 @@ CollisionDisplacement GetSolidCollisionResponse(ParticleCollider particle, int c
         // If there is a potential overlap
         if (abs(responseMagnitude) < abs(collisionResponse.magnitude)) {
             collisionResponse.magnitude = responseMagnitude;
-            collisionResponse.direction = faceNormal;
-            collisionResponse.displacement = responseMagnitude * faceNormal;
+            collisionResponse.direction = normal;
+            collisionResponse.displacement = responseMagnitude * normal;
         }
     }
 

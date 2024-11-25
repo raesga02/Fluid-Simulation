@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System;
-using UnityEditor.MPE;
 
 [Serializable]
 public struct CollisionDisplacement {
@@ -30,7 +29,7 @@ public class Collision3D : MonoBehaviour
 
     // Compute buffers
     ComputeBuffer verticesBuffer;
-    ComputeBuffer faceNormalsBuffer;
+    ComputeBuffer collisionNormalsBuffer;
     ComputeBuffer collidersLookupsBuffer;
     ComputeBuffer collisionResultsBuffer;
     ComputeBuffer aabbCollisionResultsBuffer;
@@ -38,25 +37,25 @@ public class Collision3D : MonoBehaviour
     private void InitializeBuffers() {
         // Alloc buffers
         verticesBuffer = new ComputeBuffer(colliderData.vertices.Length, sizeof(float) * 3);
-        faceNormalsBuffer = new ComputeBuffer(colliderData.faceNormals.Length, sizeof(float) * 3);
+        collisionNormalsBuffer = new ComputeBuffer(colliderData.collisionNormals.Length, sizeof(float) * 3);
         collidersLookupsBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(ColliderLookup)));
         collisionResultsBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(CollisionDisplacement)));
         aabbCollisionResultsBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(CollisionDisplacement)));
 
         // Bind compute buffers
         GraphicsHelper.SetBufferKernels(computeShader, "_Vertices", verticesBuffer, 0, 1);
-        GraphicsHelper.SetBufferKernels(computeShader, "_Normals", faceNormalsBuffer, 0, 1);
+        GraphicsHelper.SetBufferKernels(computeShader, "_Normals", collisionNormalsBuffer, 0, 1);
         GraphicsHelper.SetBufferKernels(computeShader, "_CollidersLookup", collidersLookupsBuffer, 0, 1);
         GraphicsHelper.SetBufferKernels(computeShader, "_CollisionResults", collisionResultsBuffer, 0, 1);
         GraphicsHelper.SetBufferKernels(computeShader, "_AABBCollisionResults", aabbCollisionResultsBuffer, 0, 1);
 
         // Initialize data
         verticesBuffer.SetData(colliderData.vertices);
-        faceNormalsBuffer.SetData(colliderData.faceNormals);
+        collisionNormalsBuffer.SetData(colliderData.collisionNormals);
         collidersLookupsBuffer.SetData(Enumerable.Repeat(new ColliderLookup { 
             startIdx = 0, 
             numVertices = colliderData.vertices.Length, 
-            numFaces = colliderData.faceNormals.Length,
+            numCollisionNormals = colliderData.collisionNormals.Length,
             isBounds = collider3d.bounceDirection == BounceDirection.INSIDE ? 1 : 0,
             aabb = colliderData.aabb
         },1).ToArray());
@@ -67,12 +66,12 @@ public class Collision3D : MonoBehaviour
         computeShader.SetVector("_position", particle.transform.position);
         computeShader.SetFloat("_radius", particle.radius);
         computeShader.SetInt("_numVertices", colliderData.vertices.Length);
-        computeShader.SetInt("_numFaces", colliderData.faceNormals.Length);
+        computeShader.SetInt("_numCollisionNormals", colliderData.collisionNormals.Length);
     }
 
     private void DestroyBuffers() {
         verticesBuffer?.Release();
-        faceNormalsBuffer?.Release();
+        collisionNormalsBuffer?.Release();
         collidersLookupsBuffer?.Release();
         collisionResultsBuffer?.Release();
         aabbCollisionResultsBuffer?.Release();
@@ -120,7 +119,7 @@ public class Collision3D : MonoBehaviour
 
             if (aabbCollided) {
                 Vector3 newCentre = particle.transform.position + aabbResponse.displacement;
-                Gizmos.color = Color.cyan;
+                Gizmos.color = Color.blue;
                 Gizmos.DrawWireSphere(newCentre, particle.radius);
             }
         }
