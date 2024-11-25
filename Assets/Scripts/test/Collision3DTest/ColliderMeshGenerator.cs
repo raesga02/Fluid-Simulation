@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
@@ -25,6 +24,32 @@ public static class ColliderMeshGenerator {
         };
     }
 
+    public static Vector3[] GetCollisionNormals(Mesh mesh) {
+        Vector3[] faceNormals = GetFaceNormals(mesh);
+        Vector3[] edgeNormals = GetEdgeNormals(mesh);
+
+        return faceNormals.Concat(edgeNormals).ToArray();
+    }
+
+    public static Vector3[] GetEdgeCentres(Mesh mesh) {
+        Vector3[] edgeCentres = new Vector3[] {
+            new Vector3( 0.5f,  0.5f,  0.0f),
+            new Vector3(-0.5f,  0.5f,  0.0f),
+            new Vector3(-0.5f, -0.5f,  0.0f),
+            new Vector3( 0.5f, -0.5f,  0.0f),
+            new Vector3( 0.0f,  0.5f,  0.5f),
+            new Vector3( 0.0f, -0.5f,  0.5f),
+            new Vector3( 0.0f, -0.5f, -0.5f),
+            new Vector3( 0.0f,  0.5f, -0.5f),
+            new Vector3( 0.5f,  0.0f,  0.5f),
+            new Vector3(-0.5f,  0.0f,  0.5f),
+            new Vector3(-0.5f,  0.0f, -0.5f),
+            new Vector3( 0.5f,  0.0f, -0.5f)
+        };
+
+        return edgeCentres;
+    }
+
     public static Vector3[] GetFaceNormals(Mesh mesh) {
         Vector3[] normals = new Vector3[mesh.triangles.Length / 3];
 
@@ -34,6 +59,25 @@ public static class ColliderMeshGenerator {
         }
 
         return normals;
+    }
+
+    public static Vector3[] GetEdgeNormals(Mesh mesh) {
+        Vector3[] edgeNormals = new Vector3[] {
+            new Vector3( 1.0f,  1.0f,  0.0f),
+            new Vector3(-1.0f,  1.0f,  0.0f),
+            new Vector3(-1.0f, -1.0f,  0.0f),
+            new Vector3( 1.0f, -1.0f,  0.0f),
+            new Vector3( 0.0f,  1.0f,  1.0f),
+            new Vector3( 0.0f, -1.0f,  1.0f),
+            new Vector3( 0.0f, -1.0f, -1.0f),
+            new Vector3( 0.0f,  1.0f, -1.0f),
+            new Vector3( 1.0f,  0.0f,  1.0f),
+            new Vector3(-1.0f,  0.0f,  1.0f),
+            new Vector3(-1.0f,  0.0f, -1.0f),
+            new Vector3( 1.0f,  0.0f, -1.0f)
+        };
+
+        return edgeNormals.Select(n => n.normalized).ToArray();
     }
 
     private static Vector3[] GetVertices() {
