@@ -68,8 +68,8 @@ void Exchange(int i, int j) {
 [numthreads(BLOCK_SIZE, 1, 1)]
 void ApplyExternalForces(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
-    _Velocities[id.x].xy += _gravity.xy * _deltaTime;
-    _PredictedPositions[id.x].xy = _Positions[id.x].xy + _Velocities[id.x].xy * _deltaTime;
+    _Velocities[id.x] += _gravity * _deltaTime;
+    _PredictedPositions[id.x] = _Positions[id.x] + _Velocities[id.x] * _deltaTime;
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
@@ -118,8 +118,8 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
     int3 srcCellPos = GetCellPos(srcPos, _smoothingLength);
     
     float rawKernelAcc = 0.0;
-    for (int i = 0; i < 9; i++) {
-        int3 nbrCellPos = srcCellPos + neighborOffsets[i];
+    for (int i = 0; i < NEIGHBOURHOOD_SIZE; i++) {
+        int3 nbrCellPos = srcCellPos + neighbourOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
         int2 lookupData = _LookupHashIndices[nbrKey];
@@ -162,8 +162,8 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
     int3 srcCellPos = GetCellPos(srcPos, _smoothingLength);
     
     float3 pressureGradient = float3(0.0, 0.0, 0.0);
-    for (int i = 0; i < 9; i++) {
-        int3 nbrCellPos = srcCellPos + neighborOffsets[i];
+    for (int i = 0; i < NEIGHBOURHOOD_SIZE; i++) {
+        int3 nbrCellPos = srcCellPos + neighbourOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
         int2 lookupData = _LookupHashIndices[nbrKey];
@@ -204,8 +204,8 @@ void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
     int3 srcCellPos = GetCellPos(srcPos, _smoothingLength);
     
     float3 viscosityBodyForce = float3(0.0, 0.0, 0.0);
-    for (int i = 0; i < 9; i++) {
-        int3 nbrCellPos = srcCellPos + neighborOffsets[i];
+    for (int i = 0; i < NEIGHBOURHOOD_SIZE; i++) {
+        int3 nbrCellPos = srcCellPos + neighbourOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
         int2 lookupData = _LookupHashIndices[nbrKey];
@@ -237,7 +237,7 @@ void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
 [numthreads(BLOCK_SIZE, 1, 1)]
 void IntegratePosition(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
-    _Positions[id.x].xy += _Velocities[id.x].xy * _deltaTime;
+    _Positions[id.x] += _Velocities[id.x] * _deltaTime;
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
@@ -245,21 +245,21 @@ void HandleCollisions(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
     for (int i = 0; i < _numColliders; i++) {
-        ParticleCollider particle = { _Positions[id.x].xy, _particleRadius };
-        SimulationCollider lookup = _CollidersLookup[i];
+        ParticleCollider particle = { _Positions[id.x], _particleRadius };
+        SimulationCollider collider = _CollidersLookup[i];
 
-        if (lookup.isBounds == 0) {
-            CollisionDisplacement response = GetSolidCollisionResponse(particle, i);
+        if (collider.isBounds == 0) { // BounceDirection.OUTSIDE
+            CollisionDisplacement response = GetSolidCollisionResponse(particle, collider);
             if (response.magnitude != 0.0) {
-                _Positions[id.x].xy += response.magnitude * response.direction;
-                _Velocities[id.x].xy = ReflectAndDampVelocity(_Velocities[id.x].xy, response.direction, _collisionDamping);
+                _Positions[id.x] += response.magnitude * response.direction;
+                _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], response.direction, _collisionDamping);
             }
         }
-        else if (lookup.isBounds == 1) {
-            HollowCollisionDisplacement response = GetHollowCollisionResponse(particle, i);
-            _Positions[id.x].xy += response.displacement;
-            _Velocities[id.x].xy = ReflectAndDampVelocity(_Velocities[id.x].xy, response.normal, _collisionDamping);
-            _Velocities[id.x].xy += response.displacement * GetVelocityAdjustment(_Velocities[id.x].xy, response.quadrant, _gravity.xy);
+        else if (collider.isBounds == 1) { // BounceDirection.INSIDE
+            CollisionDisplacement response = GetHollowCollisionResponse(particle, collider);
+            _Positions[id.x] += response.displacement;
+            _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], response.direction, _collisionDamping);
+            _Velocities[id.x] += response.displacement * GetVelocityAdjustment(_Velocities[id.x], _gravity);
         }
     }  
 }

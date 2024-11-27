@@ -48,7 +48,7 @@ namespace _3D {
             if (!needsUpdate) { return; }
             
             bounds = new Bounds(transform.position, Vector3.one * 20000);
-            particleMesh = ConvexMeshGenerator.GenerateMesh(numSides);
+            // TODO: change with custom mesh
             argsBuffer?.Release();
             argsBuffer = GraphicsHelper.CreateArgsBuffer(particleMesh, manager.numParticles);
 

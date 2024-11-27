@@ -8,7 +8,7 @@ namespace _3D {
         
         [Header("Spawner Settings")]
         public int numParticles = 1000;
-        [SerializeField] Vector3 spawnSize = new Vector3(1.0f, 1.0f, 0.0f);
+        [SerializeField] Vector3 spawnSize = new Vector3(1.0f, 1.0f, 1.0f);
         [SerializeField] Vector3 initialVelocity = new Vector3(0.0f, 0.0f, 0.0f);
         [SerializeField, Min(0.0f)] float areaMultiplier = 1.0f;
 
@@ -36,13 +36,9 @@ namespace _3D {
                 Vector3Int gridPosition = spawnPositions[i];
                 Vector3 localPos = Vector3.Scale(gridPosition, computedSpacing) - spawnSize * 0.5f;
                 Vector3 wPos = transform.localToWorldMatrix * new Vector4(localPos.x, localPos.y, localPos.z, 1.0f);
-                
-                // TODO: delete after
-                Vector2 randomDir1 = Random.insideUnitCircle;
-                Vector2 randomDir2 = Random.insideUnitCircle;
 
-                positions[i] = wPos + positionJitter * Random.value * new Vector3(randomDir1.x, randomDir1.y, 0.0f);
-                velocities[i] = initialVelocity + velocityJitter * Random.value * new Vector3(randomDir2.x, randomDir2.y, 0.0f);
+                positions[i] = wPos + positionJitter * Random.value * Random.insideUnitSphere;
+                velocities[i] = initialVelocity + velocityJitter * Random.value * Random.insideUnitSphere;
                 densities[i] = 0.0f;
                 pressures[i] = 0.0f;
             }
@@ -94,7 +90,7 @@ namespace _3D {
                 var matrix = Gizmos.matrix;
                 Gizmos.matrix = transform.localToWorldMatrix;
                 Gizmos.color = Color.magenta;
-                Gizmos.DrawWireCube(Vector3.zero, Vector2.one * spawnSize);
+                Gizmos.DrawWireCube(Vector3.zero, spawnSize);
                 Gizmos.matrix = matrix;
             }
         }

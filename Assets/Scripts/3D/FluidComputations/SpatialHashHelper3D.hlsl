@@ -1,19 +1,37 @@
-static const int3 neighborOffsets[9] = {
-    int3(-1, -1, 0),
-    int3(-1,  0, 0),
-    int3(-1,  1, 0),
-    int3( 0, -1, 0),
-    int3( 0,  0, 0),
-    int3( 0,  1, 0),
-    int3( 1, -1, 0),
-    int3( 1,  0, 0),
-    int3( 1,  1, 0)
-}; // TODO: change to full 3D neighbourhood
+#define NEIGHBOURHOOD_SIZE 27
+
+static const int3 neighbourOffsets[NEIGHBOURHOOD_SIZE] = {
+    int3(-1, -1, -1),
+    int3(-1,  0, -1),
+    int3(-1,  1, -1),
+    int3( 0, -1, -1),
+    int3( 0,  0, -1),
+    int3( 0,  1, -1),
+    int3( 1, -1, -1),
+    int3( 1,  0, -1),
+    int3( 1,  1, -1),
+    int3(-1, -1,  0),
+    int3(-1,  0,  0),
+    int3(-1,  1,  0),
+    int3( 0, -1,  0),
+    int3( 0,  0,  0),
+    int3( 0,  1,  0),
+    int3( 1, -1,  0),
+    int3( 1,  0,  0),
+    int3( 1,  1,  0),
+    int3(-1, -1,  1),
+    int3(-1,  0,  1),
+    int3(-1,  1,  1),
+    int3( 0, -1,  1),
+    int3( 0,  0,  1),
+    int3( 0,  1,  1),
+    int3( 1, -1,  1),
+    int3( 1,  0,  1),
+    int3( 1,  1,  1)
+};
 
 // Hashing primes
-static const int p1 = 73856093;
-static const int p2 = 19349663;
-static const int p3 = 83492791;
+static const int3 p = int3(73856093, 19349663, 83492791);
 
 static const int INT_MAX = 0x7FFFFFFF;
 
@@ -22,7 +40,7 @@ int3 GetCellPos(float3 pos, float supportRadius) {
 }
 
 int ComputeHash(int3 gridPos) {
-    return (gridPos.x * p1) + (gridPos.y * p2) + (gridPos.z * 0.0); // TODO: change so it doesnt ignore z
+    return dot(gridPos, p);
 }
 
 int GetKey(int hash, int hashSize) {

@@ -68,7 +68,7 @@ namespace _3D {
             GraphicsHelper.SetBufferKernels(computeShader, "_LookupHashIndices", manager.lookupHashIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel, applyPressureForceKernel, applyViscosityForceKernel);
             GraphicsHelper.SetBufferKernels(computeShader, "_CollidersLookup", manager.collidersLookupsBuffer, handleCollisionsKernel);
             GraphicsHelper.SetBufferKernels(computeShader, "_CollidersVertices", manager.collidersVerticesBuffer, handleCollisionsKernel);
-            GraphicsHelper.SetBufferKernels(computeShader, "_CollidersNormals", manager.collidersNormalsBuffer, handleCollisionsKernel);
+            GraphicsHelper.SetBufferKernels(computeShader, "_CollidersCollisionNormals", manager.collidersCollisionNormalsBuffer, handleCollisionsKernel);
         }
 
         void UpdateSettings() {

@@ -34,12 +34,12 @@ namespace _3D {
         public ComputeBuffer lookupHashIndicesBuffer { get; private set; }
         public ComputeBuffer collidersLookupsBuffer { get; private set; }
         public ComputeBuffer collidersVerticesBuffer { get; private set; }
-        public ComputeBuffer collidersNormalsBuffer { get; private set; }
+        public ComputeBuffer collidersCollisionNormalsBuffer { get; private set; }
 
         [HideInInspector] public FluidData fluidInitialData;
         [HideInInspector] public ColliderLookup[] collidersLookups; 
-        [HideInInspector] public Vector2[] collidersVertices;
-        [HideInInspector] public Vector2[] collidersNormals;
+        [HideInInspector] public Vector3[] collidersVertices;
+        [HideInInspector] public Vector3[] collidersCollisionNormals;
 
 
         // Private constructor to avoid instantiation
@@ -56,7 +56,7 @@ namespace _3D {
 
         void Start() {
             fluidInitialData = fluidSpawner.SpawnFluid();
-            (collidersLookups, collidersVertices, collidersNormals) = fluidColliderManager.GetColliderData();
+            (collidersLookups, collidersVertices, collidersCollisionNormals) = fluidColliderManager.GetColliderData();
             numParticles = fluidInitialData.positions.Length;
             paddedNumParticles = fluidInitialData.sortedSpatialHashedIndices.Length;
             numColliders = collidersLookups.Length;
@@ -80,8 +80,8 @@ namespace _3D {
             lookupHashIndicesBuffer = new ComputeBuffer(numParticles * 2, sizeof(int) * 2);
             
             collidersLookupsBuffer = new ComputeBuffer(collidersLookups.Length, Marshal.SizeOf(typeof(ColliderLookup)));
-            collidersVerticesBuffer = new ComputeBuffer(collidersVertices.Length, sizeof(float) * 2);
-            collidersNormalsBuffer = new ComputeBuffer(collidersNormals.Length, sizeof(float) * 2);
+            collidersVerticesBuffer = new ComputeBuffer(collidersVertices.Length, sizeof(float) * 3);
+            collidersCollisionNormalsBuffer = new ComputeBuffer(collidersCollisionNormals.Length, sizeof(float) * 3);
         }
 
         void FillComputeBuffers() {
@@ -94,7 +94,7 @@ namespace _3D {
             lookupHashIndicesBuffer.SetData(fluidInitialData.lookupHashIndices);
             collidersLookupsBuffer.SetData(collidersLookups);
             collidersVerticesBuffer.SetData(collidersVertices);
-            collidersNormalsBuffer.SetData(collidersNormals);
+            collidersCollisionNormalsBuffer.SetData(collidersCollisionNormals);
         }
 
         void FixedUpdate() {
@@ -126,7 +126,7 @@ namespace _3D {
 
             collidersLookupsBuffer.Release();
             collidersVerticesBuffer.Release();
-            collidersNormalsBuffer.Release();
+            collidersCollisionNormalsBuffer.Release();
         }
     }
     

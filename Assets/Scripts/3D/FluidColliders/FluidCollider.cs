@@ -6,32 +6,37 @@ namespace _3D {
     public class FluidCollider : MonoBehaviour {
 
         [Header("Collider Settings")]
-        [SerializeField, Range(3, 30)] int numSides = 4;
-        [SerializeField, Range(0f, 360)] float initialAngle = 0f;
         public BounceDirection bounceDirection = BounceDirection.OUTSIDE;
 
-        [Header("Display Settings")]
+        [Header("Collider Display Settings")]
+        public Color solidColliderColor = new Color(0.25f, 0.5f, 0.5f);
+        public Color hollowColliderColor = new Color(0.25f, 0.75f, 0.25f);
         [SerializeField] bool drawCollider = true;
         public bool drawColliderAABB = true;
 
+        [Header("Normals Display Settings")]
+        [SerializeField] bool drawFaceNormals = true;
+        [SerializeField] bool drawEdgeNormals = true;
+        
         [Header("Computed Collider")]
         [SerializeField] Mesh mesh = null;
-        [SerializeField] AABB minAABB;
+        [SerializeField] AABB aabb;
 
+        // Private fields
         bool needsUpdate = true;
 
 
-        public (Vector2[] vertices, Vector2[] normals, AABB aabb) GetData() {
+        public ColliderData GetData() {
             UpdateSettings();
-            Vector2[] vertices = mesh.vertices.Select(v => (Vector2)transform.localToWorldMatrix.MultiplyPoint(v)).ToArray();
-            Vector2[] normals = new Vector2[vertices.Length];
-
-            for (int i = 0; i < normals.Length; i++) {
-                Vector2 edge = vertices[(i + 1) % normals.Length] - vertices[i];
-                normals[i] = new Vector2(edge.y, - edge.x).normalized;
-            }
-
-            return (vertices, normals, minAABB);
+            Vector3[] vertices = mesh.vertices.Select(v => transform.TransformPoint(v)).ToArray();
+            Vector3[] collisionNormals = ColliderMeshGenerator.GetCollisionNormals(mesh).Select(n => transform.TransformDirection(n)).ToArray();
+            AABB aabb = ColliderMeshGenerator.GetMinimumAABB(mesh, transform.localToWorldMatrix);
+        
+            return new ColliderData {
+                vertices = vertices,
+                collisionNormals = collisionNormals,
+                aabb = aabb
+            };
         }
 
         private void OnValidate() {
@@ -41,36 +46,78 @@ namespace _3D {
         private void UpdateSettings() {
             if (!needsUpdate) { return; }
 
-            mesh = ConvexMeshGenerator.GenerateMesh(numSides, initialAngle * Mathf.Deg2Rad);
-            minAABB = ConvexMeshGenerator.GetMinimumAABB(mesh, transform.localToWorldMatrix);
+            mesh = ColliderMeshGenerator.GenerateMesh();
+            aabb = ColliderMeshGenerator.GetMinimumAABB(mesh, transform.localToWorldMatrix);
             needsUpdate = false;
         }
 
         private void OnDrawGizmos() {
             UpdateSettings();
             if (drawCollider) { DrawCollider(); }
+            if (drawFaceNormals) { DrawFaceNormals(); }
+            if (drawEdgeNormals) { DrawEdgeNormals(); }
             if (drawColliderAABB) { DrawColliderAABB(); }
         }
 
         private void DrawCollider() {
             var matrix = Gizmos.matrix;
             Gizmos.matrix = transform.localToWorldMatrix;
-            Gizmos.color = Color.gray;
-
-
+            
             if (bounceDirection == BounceDirection.OUTSIDE) {
+                Gizmos.color = solidColliderColor;
                 Gizmos.DrawMesh(mesh);
             }
-            else {
-                Gizmos.DrawLineStrip(mesh.vertices, true);
+            else { // bounceDirection == BounceDirection.INSIDE
+                Gizmos.color = hollowColliderColor;
+                Gizmos.DrawWireMesh(mesh);
             }
 
             Gizmos.matrix = matrix;
         }
 
+        private void DrawFaceNormals() {
+            Vector3[] faceNormals = ColliderMeshGenerator.GetFaceNormals(mesh);
+            
+            for (int i = 0, j = i; i < faceNormals.Length; i++, j+=3) {
+                var matrix = Gizmos.matrix;
+                Gizmos.matrix = transform.localToWorldMatrix;
+
+                Vector3 normal = faceNormals[i];
+                Vector3 wNormal = transform.TransformDirection(normal);
+                Vector3[] triangleVertices = new int[] { mesh.triangles[j], mesh.triangles[j + 1], mesh.triangles[j + 2] }.Select(idx => mesh.vertices[idx]).ToArray();
+                Vector3 triangleCentre = triangleVertices.Aggregate(Vector3.zero, (currentSum, nextVertex) => currentSum + nextVertex) / 3;
+
+                Gizmos.color = new Color(wNormal.x, wNormal.y, wNormal.z, 0.75f);
+                Gizmos.DrawLine(triangleCentre, triangleCentre + normal / 10);
+
+                Gizmos.matrix = matrix;
+            }
+        }
+
+        private void DrawEdgeNormals() {
+            Vector3[] edgeNormals = ColliderMeshGenerator.GetEdgeNormals(mesh);
+            Vector3[] edgeCentres = ColliderMeshGenerator.GetEdgeCentres(mesh);
+
+            for (int i = 0, j = i; i < edgeNormals.Length; i++, j+=3) {
+                var matrix = Gizmos.matrix;
+                Gizmos.matrix = transform.localToWorldMatrix;
+
+                Vector3 normal = edgeNormals[i];
+                Vector3 wNormal = transform.TransformDirection(normal);
+                Vector3 edgeCentre = edgeCentres[i];
+
+                Gizmos.color = new Color(wNormal.x, wNormal.y, wNormal.z, 0.75f);
+                Gizmos.DrawLine(edgeCentre, edgeCentre + normal / 10);
+
+                Gizmos.matrix = matrix;
+            }
+        }
+
         private void DrawColliderAABB() {
-            Vector2 size = minAABB.max - minAABB.min;
-            Vector2 centre = minAABB.min + size * 0.5f;
+            aabb = ColliderMeshGenerator.GetMinimumAABB(mesh, transform.localToWorldMatrix);
+
+            Vector3 size = aabb.max - aabb.min;
+            Vector3 centre = aabb.min + size * 0.5f;
             Gizmos.color = Color.white;
             Gizmos.DrawWireCube(centre, size);
         }

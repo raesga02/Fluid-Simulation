@@ -10,54 +10,51 @@ struct ProjectionLine {
 };
 
 struct ParticleCollider {
-    float2 position;
+    float3 position;
     float radius;
 };
 
 struct AABB {
-    float2 min;
-    float2 max;
+    float3 min;
+    float3 max;
 };
 
 struct SimulationCollider {
-    int startIdx;
-    int numSides;
+    int vertexStartIdx;
+    int numVertices;
+    int normalStartIdx;
+    int numCollisionNormals;
     int isBounds;
     AABB aabb;
 };
 
 struct CollisionDisplacement {
     float magnitude;
-    float2 direction;
-};
-
-struct HollowCollisionDisplacement {
-    float2 displacement;
-    float2 normal;
-    float2 quadrant;
+    float3 direction;
+    float3 displacement;
 };
 
 
 // Buffers
 RWStructuredBuffer<SimulationCollider> _CollidersLookup;
-RWStructuredBuffer<float2> _CollidersVertices;
-RWStructuredBuffer<float2> _CollidersNormals;
+RWStructuredBuffer<float3> _CollidersVertices;
+RWStructuredBuffer<float3> _CollidersCollisionNormals;
 
 
 // Vector Math Helpers
 
-float2 ReflectAndDampVelocity(float2 velocity, float2 normal, float collisionDamping) {
+float3 ReflectAndDampVelocity(float3 velocity, float3 normal, float collisionDamping) {
     return velocity - (collisionDamping + 1) * dot(velocity, normal) * normal;
 }
 
 
 // Collision Helpers
 
-ProjectionLine ProjectCollider(SimulationCollider collider, float2 normal) {
+ProjectionLine ProjectCollider(SimulationCollider collider, float3 normal) {
     ProjectionLine colliderProjection = { FLOAT_MAX, FLOAT_MIN };
     
-    for (int i = 0; i < collider.numSides; i++) {
-        float vertexProjection = dot(_CollidersVertices[collider.startIdx + i], normal);
+    for (int i = 0; i < collider.numVertices; i++) {
+        float vertexProjection = dot(_CollidersVertices[collider.vertexStartIdx + i], normal);
         colliderProjection.start = min(vertexProjection, colliderProjection.start);
         colliderProjection.end = max(vertexProjection, colliderProjection.end);
     }
@@ -65,19 +62,19 @@ ProjectionLine ProjectCollider(SimulationCollider collider, float2 normal) {
     return colliderProjection;
 }
 
-ProjectionLine ProjectParticle(ParticleCollider particle, float2 normal) {
+ProjectionLine ProjectParticle(ParticleCollider particle, float3 normal) {
     float particleCentreProjection = dot(particle.position, normal);
     ProjectionLine particleProjection =  { particleCentreProjection - particle.radius, particleCentreProjection + particle.radius};
     return particleProjection;
 }
 
 bool isOutsideAABB(ParticleCollider particle, AABB aabb) {
-    float2 aabbHalfSize = (aabb.max - aabb.min) * 0.5 - particle.radius;
-    float2 aabbCentre = aabb.min + aabbHalfSize + particle.radius;
+    float3 aabbHalfSize = (aabb.max - aabb.min) * 0.5 - particle.radius;
+    float3 aabbCentre = aabb.min + aabbHalfSize + particle.radius;
     
-    float2 distCentreToParticle = particle.position - aabbCentre;
-    float2 quadrant = sign(distCentreToParticle);
-    float2 dst = aabbHalfSize - quadrant * distCentreToParticle;
+    float3 distCentreToParticle = particle.position - aabbCentre;
+    float3 quadrant = sign(distCentreToParticle);
+    float3 dst = aabbHalfSize - quadrant * distCentreToParticle;
 
     return all(step(0.0, - dst));
 }
@@ -93,9 +90,8 @@ float GetCollisionResponseOverLine(ProjectionLine particleProjection, Projection
     return colliderProjection.end - particleProjection.start;
 }
 
-CollisionDisplacement GetSolidCollisionResponse(ParticleCollider particle, int colliderIdx) {
-    SimulationCollider collider = _CollidersLookup[colliderIdx];
-    CollisionDisplacement collisionResponse = { FLOAT_MAX, float2(0.0, 0.0) };
+CollisionDisplacement GetSolidCollisionResponse(ParticleCollider particle, SimulationCollider collider) {
+    CollisionDisplacement collisionResponse = { FLOAT_MAX, float3(0.0, 0.0, 0.0), float3(0.0, 0.0, 0.0) };
 
     // Early discard with the aabb
     if (isOutsideAABB(particle, collider.aabb)) {
@@ -103,10 +99,10 @@ CollisionDisplacement GetSolidCollisionResponse(ParticleCollider particle, int c
         return collisionResponse;
     }
 
-    for (int i = 0; i < collider.numSides; i++) {
-        float2 edgeNormal = _CollidersNormals[collider.startIdx + i];
-        ProjectionLine particleProjection = ProjectParticle(particle, edgeNormal);
-        ProjectionLine colliderProjection = ProjectCollider(collider, edgeNormal);
+    for (int i = 0; i < collider.numCollisionNormals; i++) {
+        float3 normal = _CollidersCollisionNormals[collider.normalStartIdx + i];
+        ProjectionLine particleProjection = ProjectParticle(particle, normal);
+        ProjectionLine colliderProjection = ProjectCollider(collider, normal);
         float responseMagnitude = GetCollisionResponseOverLine(particleProjection, colliderProjection);
 
         // If there is no overlap
@@ -118,33 +114,35 @@ CollisionDisplacement GetSolidCollisionResponse(ParticleCollider particle, int c
         // If there is a potential overlap
         if (abs(responseMagnitude) < abs(collisionResponse.magnitude)) {
             collisionResponse.magnitude = responseMagnitude;
-            collisionResponse.direction = edgeNormal;
+            collisionResponse.direction = normal;
+            collisionResponse.displacement = responseMagnitude * normal;
         }
     }
 
     return collisionResponse;
 }
 
-float2 GetVelocityAdjustment(float2 velocity, float2 quadrant, float2 gravity) {
-    float2 isGravityOnAxis = step(abs(gravity), float2(0.0, 0.0));
-    float2 isVelocitySmall = abs(velocity) < 0.001;
-    return - isGravityOnAxis * isVelocitySmall * quadrant * 0.1;
+float3 GetVelocityAdjustment(float3 velocity, float3 gravity) {
+    float3 isGravityOnAxis = step(abs(gravity), 0.0);
+    float3 isVelocitySmall = abs(velocity) < 0.001;
+    return - isGravityOnAxis * isVelocitySmall * 0.1;
 }
 
-HollowCollisionDisplacement GetHollowCollisionResponse(ParticleCollider particle, int colliderIdx) {
-    HollowCollisionDisplacement collisionResponse = { float2(0.0, 0.0), float2(0.0, 0.0), float2(0.0, 0.0) };
-    SimulationCollider collider = _CollidersLookup[colliderIdx];
-    float2 aabbHalfSize = (collider.aabb.max - collider.aabb.min) * 0.5 - particle.radius;
-    float2 aabbCentre = collider.aabb.min + aabbHalfSize + particle.radius;
+CollisionDisplacement GetHollowCollisionResponse(ParticleCollider particle, SimulationCollider collider) {
+    CollisionDisplacement collisionResponse = { FLOAT_MAX, float3(0.0, 0.0, 0.0), float3(0.0, 0.0, 0.0) };
+    float3 aabbHalfSize = (collider.aabb.max - collider.aabb.min) * 0.5 - particle.radius;
+    float3 aabbCentre = collider.aabb.min + aabbHalfSize + particle.radius;
     
-    float2 distCentreToParticle = particle.position - aabbCentre;
-    float2 quadrant = sign(distCentreToParticle);
-    float2 dst = aabbHalfSize - quadrant * distCentreToParticle;
+    float3 distCentreToParticle = particle.position - aabbCentre;
+    float3 quadrant = sign(distCentreToParticle);
+    float3 dst = aabbHalfSize - quadrant * distCentreToParticle;
 
-    float2 needsToBounce = step(float2(0.0, 0.0), - dst);
-    collisionResponse.displacement = (quadrant * aabbHalfSize + aabbCentre - particle.position) * needsToBounce; 
-    collisionResponse.normal = - quadrant * needsToBounce;
-    collisionResponse.quadrant = quadrant;
+    float3 needsToBounce = step(0.0, - dst);
+    float3 displacement = (quadrant * aabbHalfSize + aabbCentre - particle.position) * needsToBounce;
+
+    collisionResponse.magnitude = length(displacement);
+    collisionResponse.direction = - quadrant * needsToBounce;
+    collisionResponse.displacement = displacement;
 
     return collisionResponse;
 }
