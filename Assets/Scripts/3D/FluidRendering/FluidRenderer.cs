@@ -10,7 +10,6 @@ namespace _3D {
     public class FluidRenderer : MonoBehaviour {
 
         [Header("Display Settings")]
-        [SerializeField, Min(3)] int numSides = 10;
         [SerializeField, Min(0.0f)] float displaySizeMultiplier;
         [SerializeField] float independentDisplaySize = 0.2f;
         [SerializeField] bool independentSizing = false;

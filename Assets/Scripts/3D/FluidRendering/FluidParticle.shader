@@ -9,14 +9,10 @@ Shader "Custom/FluidParticle3D"{
     }
     SubShader {
         Tags { 
-            "RenderType"="Transparent" 
-            "Queue"="Transparent"
+            "RenderType"="Geometry" 
         }
 
         Pass {
-            // Shader configuration
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
 
             CGPROGRAM
             #pragma vertex vert
