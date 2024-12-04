@@ -9,7 +9,7 @@ Shader "Custom/FluidParticle3D"{
     }
     SubShader {
         Tags { 
-            "RenderType"="Geometry" 
+            "RenderType"="Opaque" 
         }
 
         Pass {
