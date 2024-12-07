@@ -1,8 +1,8 @@
 Shader "Custom/BillboardShader"
 {
     Properties {
-        _LightColor ("Light Color", Color) = (1.0, 1.0, 1.0, 1.0)
-        _LightDirection ("Light Direction", Vector) = (0, 1, 0)
+        _ParticlePosition ("Particle Position", Vector) = (0, 0, 0)
+        _DisplaySize ("Display Size", float) = 1.0
     }
     SubShader {
         Tags { "RenderType"="Opaque" }
@@ -22,68 +22,69 @@ Shader "Custom/BillboardShader"
             struct Interpolators {
                 float4 pos : SV_POSITION;
                 float2 uv : TEXCOORD0;
-                float3 worldPos : TEXCOORD1;
+                float3x3 rotationMatrix : TEXCOORD1;
             };
 
-            float4 _LightColor;
-            float3 _LightDirection;
+            float3 _ParticlePosition;
+            float _DisplaySize;
 
+            float3x3 GetRotationMatrixToCamera(float3 localForward, float3 toCamera) {
+                float3 axis = normalize(cross(toCamera, localForward));
+
+                if (length(axis) < 0.0001) { axis = float3(1.0, 0.0, 0.0); }
+
+                float angle = acos(dot(toCamera, localForward));
+
+                float c = cos(angle);
+                float s = sin(angle);
+
+                float3x3 rotationMatrix = float3x3(
+                    c + axis.x * axis.x * (1.0 - c), axis.x * axis.y * (1.0 - c) - axis.z * s, axis.x * axis.z * (1.0 - c) + axis.y * s,
+                    axis.y * axis.x * (1.0 - c) + axis.z * s, c + axis.y * axis.y * (1.0 - c), axis.y * axis.z * (1.0 - c) - axis.x * s,
+                    axis.z * axis.x * (1.0 - c) - axis.y * s, axis.z * axis.y * (1.0 - c) + axis.x * s, c + axis.z * axis.z * (1.0 - c)
+                );
+
+                return rotationMatrix;
+            }
 
             Interpolators vert (MeshData v) {
                 Interpolators o;
 
-                float3 particleCentre = float3(0.0, 0.0, 0.0);
-                float displaySize = 1.0;
+                // Get the billboard transformation
+                float4 origin = float4(0.0, 0.0, 0.0, 1.0);
+                float4 world_origin = mul(UNITY_MATRIX_M, origin);
+                float4 view_origin = mul(UNITY_MATRIX_V, float4(_ParticlePosition, 1.0));
+                float4 world_to_view_translation = view_origin - world_origin;
 
-                float4 obj_particleCentre = mul(unity_WorldToObject, float4(particleCentre.xyz, 1.0));
-                float4 obj_finalVertPos = obj_particleCentre + v.vertex * displaySize;
+                // Transform the vertex
+                float4 world_pos = mul(UNITY_MATRIX_M, v.vertex);
+                float4 view_pos = world_pos + world_to_view_translation;
+                float4 clip_pos = mul(UNITY_MATRIX_P, view_pos);
 
-                float3 vpos = mul((float3x3)unity_ObjectToWorld, obj_finalVertPos.xyz);
-                float4 worldCoord = float4(unity_ObjectToWorld._m03, unity_ObjectToWorld._m13, unity_ObjectToWorld._m23, 1);
-                float4 viewPos = mul(UNITY_MATRIX_V, worldCoord) + float4(vpos, 0);
-                float4 outPos = mul(UNITY_MATRIX_P, viewPos);
+                float3 localForward = float3(0.0, 0.0, 1.0);
+                float3 toCamera = normalize(_WorldSpaceCameraPos - _ParticlePosition);
+                float3x3 rotationMatrix = GetRotationMatrixToCamera(localForward, toCamera);
 
-                o.pos = outPos;
-                o.worldPos = outPos + particleCentre;
+                o.pos = clip_pos;
                 o.uv = v.uv;
+                o.rotationMatrix = rotationMatrix;
 
                 return o;
             }
 
-            float3 RotateVector(float3 v, float3 axis, float angle) {
-                return v * cos(angle) + cross(axis, v) * sin(angle) + axis * dot(axis, v) * (1 - cos(angle));
-            }
-
             float4 frag (Interpolators i) : SV_Target {
-                i.uv = i.uv * 2.0 - 1.0;
+                float2 centeredUV = i.uv * 2.0 - 1.0; // Remap [0, 1] -> [-1, 1]
+                centeredUV.x = - centeredUV.x;
 
-                float r2 = dot(i.uv, i.uv);
+                // Mask circle
+                float r2 = dot(centeredUV, centeredUV);
                 if (r2 >= 1) { discard; }
 
-                return float4(0.0, 0.0, r2, 1.0);
+                // Compute correct normals
+                float3 localNormal = normalize(float3(centeredUV.xy, sqrt(1.0 - r2)));
+                float3 rotatedNormal = mul(i.rotationMatrix, localNormal);
 
-                float3 lightDir = normalize(_LightDirection);
-                float3 cameraDir = normalize(i.worldPos - _WorldSpaceCameraPos);
-                float3 localNormal = normalize(float3(i.uv.xy, sqrt(1.0 - r2)));
-
-                return float4(localNormal, 1.0);
-
-                float3 worldNormal = localNormal;
-
-                float3 up = float3(0.0, 0.0, 1.0);
-                float3 axis = normalize(cross(localNormal, cameraDir));
-
-
-                float angle = acos(dot(localNormal, cameraDir));
-                worldNormal = RotateVector(localNormal, axis, angle);
-
-                
-                float lambert = max(0.0, dot(worldNormal, lightDir));
-                float4 particleColor = float4(1.0, 1.0, 1.0, 1.0);
-                float4 color = float4(particleColor.rgb * _LightColor.rgb * lambert, particleColor.a);
-
-                return color;
-
+                return float4(rotatedNormal.xyz, 1.0);
             }
             ENDCG
         }
