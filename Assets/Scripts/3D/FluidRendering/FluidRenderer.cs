@@ -4,7 +4,8 @@ namespace _3D {
 
     public enum ColoringMode {
         FlatColor,
-        VelocityMagnitude
+        VelocityMagnitude,
+        Lambert
     }
 
     public class FluidRenderer : MonoBehaviour {
@@ -24,6 +25,7 @@ namespace _3D {
         [Header("References")]
         [SerializeField] Mesh particleMesh;
         [SerializeField] Material particleMaterial;
+        [SerializeField] Light sceneLight;
         
         // Private fields
         SimulationManager manager;
@@ -44,6 +46,9 @@ namespace _3D {
         }
 
         void UpdateSettings() {
+            particleMaterial.SetColor("_LightColor", sceneLight.color * sceneLight.intensity);
+            particleMaterial.SetVector("_LightDirection", - sceneLight.transform.forward);
+
             if (!needsUpdate) { return; }
             
             bounds = new Bounds(transform.position, Vector3.one * 20000);

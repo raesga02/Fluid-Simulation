@@ -9,6 +9,8 @@ namespace _3D {
         public BounceDirection bounceDirection = BounceDirection.OUTSIDE;
 
         [Header("Collider Display Settings")]
+        public Light sceneLight;
+        public Material material;
         public Color solidColliderColor = new Color(0.25f, 0.5f, 0.5f);
         public Color hollowColliderColor = new Color(0.25f, 0.75f, 0.25f);
         [SerializeField] bool drawCollider = true;
@@ -25,6 +27,21 @@ namespace _3D {
         // Private fields
         bool needsUpdate = true;
 
+        private void Update() {
+            UpdateSettings();
+
+            MeshFilter meshFilter = GetComponent<MeshFilter>();
+            MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+
+            if (meshFilter != null && meshRenderer != null) {
+                meshFilter.mesh = mesh;
+                meshRenderer.material = material;
+
+                material.SetColor("_MainColor", solidColliderColor);
+                material.SetColor("_LightColor", sceneLight.color * sceneLight.intensity);
+                material.SetVector("_LightDirection", - sceneLight.transform.forward);
+            }
+        }
 
         public ColliderData GetData() {
             UpdateSettings();
@@ -53,7 +70,8 @@ namespace _3D {
 
         private void OnDrawGizmos() {
             UpdateSettings();
-            if (drawCollider) { DrawCollider(); }
+
+            if (drawCollider && (!Application.isPlaying || bounceDirection == BounceDirection.INSIDE)) { DrawCollider(); }
             if (drawFaceNormals) { DrawFaceNormals(); }
             if (drawEdgeNormals) { DrawEdgeNormals(); }
             if (drawColliderAABB) { DrawColliderAABB(); }

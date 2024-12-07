@@ -47,28 +47,28 @@ namespace _3D {
         }
 
         void DistributeParticles() {
-            float[] areas = new float[spawners.Length];
-            float totalArea = 0.0f;
-            int maxAreaIdx = 0;
+            float[] volumes = new float[spawners.Length];
+            float totalVolume = 0.0f;
+            int maxVolumeIdx = 0;
             int totalParticlesAssigned = 0;
             
             if (spawners.Length == 0) { return; }
 
             for (int i = 0; i < spawners.Length; i++) {
-                float spawnArea = spawners[i].SpawnArea();
-                areas[i] = spawnArea;
-                totalArea += spawnArea;
-                if (i == 0 || areas[i] > areas[maxAreaIdx]) { maxAreaIdx = i; }
+                float spawnVolume = spawners[i].SpawnVolume();
+                volumes[i] = spawnVolume;
+                totalVolume += spawnVolume;
+                if (i == 0 || volumes[i] > volumes[maxVolumeIdx]) { maxVolumeIdx = i; }
             }
 
             for (int i = 0; i < spawners.Length; i++) {
-                int particlesToAssign = (int) (numParticles * areas[i] / totalArea);
+                int particlesToAssign = (int) (numParticles * volumes[i] / totalVolume);
                 spawners[i].numParticles = particlesToAssign;
                 totalParticlesAssigned += particlesToAssign;
             }
 
-            // Assign remaining particles to the max area spawner
-            spawners[maxAreaIdx].numParticles =  spawners[maxAreaIdx].numParticles + (numParticles - totalParticlesAssigned);
+            // Assign remaining particles to the max volume spawner
+            spawners[maxVolumeIdx].numParticles =  spawners[maxVolumeIdx].numParticles + (numParticles - totalParticlesAssigned);
         }
 
         T[] FlattenField<T>(FluidData[] data, System.Func<FluidData, T[]> selector) => data.SelectMany(selector).ToArray();

@@ -10,7 +10,7 @@ namespace _3D {
         public int numParticles = 1000;
         [SerializeField] Vector3 spawnSize = new Vector3(1.0f, 1.0f, 1.0f);
         [SerializeField] Vector3 initialVelocity = new Vector3(0.0f, 0.0f, 0.0f);
-        [SerializeField, Min(0.0f)] float areaMultiplier = 1.0f;
+        [SerializeField, Min(0.0f)] float volumeMultiplier = 1.0f;
 
         [Header("Jitter Settings")]
         [SerializeField] float positionJitter = 1;
@@ -30,14 +30,14 @@ namespace _3D {
             float[] pressures = new float[numParticles];
 
             UpdateSpawner();
-            Vector3Int[] spawnPositions = GetSpawnPositions();
+            Vector3Int[] gridPositions = GetGridPositions();
 
-            for (int i = 0; i < numParticles; i++) {
-                Vector3Int gridPosition = spawnPositions[i];
+            for (int i = 0; i < gridPositions.Length; i++) {
+                Vector3Int gridPosition = gridPositions[i];
                 Vector3 localPos = Vector3.Scale(gridPosition, computedSpacing) - spawnSize * 0.5f;
-                Vector3 wPos = transform.localToWorldMatrix * new Vector4(localPos.x, localPos.y, localPos.z, 1.0f);
+                Vector3 worldPos = transform.TransformPoint(localPos);
 
-                positions[i] = wPos + positionJitter * Random.value * Random.insideUnitSphere;
+                positions[i] = worldPos + positionJitter * Random.value * Random.insideUnitSphere;
                 velocities[i] = initialVelocity + velocityJitter * Random.value * Random.insideUnitSphere;
                 densities[i] = 0.0f;
                 pressures[i] = 0.0f;
@@ -49,18 +49,36 @@ namespace _3D {
         private void UpdateSpawner() {
             spawnSize.x = Mathf.Max(spawnSize.x, 1.0f);
             spawnSize.y = Mathf.Max(spawnSize.y, 1.0f);
+            spawnSize.z = Mathf.Max(spawnSize.z, 1.0f);
             
-            int particlesPerAxisX = Mathf.CeilToInt(Mathf.Sqrt(numParticles));
-            int particlesPerAxisY = Mathf.CeilToInt(numParticles / (float)particlesPerAxisX);
-            
-            float spacingX = spawnSize.x / Mathf.Max(1, particlesPerAxisX - 1);
-            float spacingY = spawnSize.y / Mathf.Max(1, particlesPerAxisY - 1);
-
-            computedParticlesPerAxis = new Vector3Int(particlesPerAxisX, particlesPerAxisY, 1);
-            computedSpacing = new Vector3(spacingX, spacingY, 0.0f);
+            ComputeSpawnerDistribution();
         }
 
-        Vector3Int[] GetSpawnPositions() {
+        void ComputeSpawnerDistribution() {
+            float spawnVolume = spawnSize.x * spawnSize.y * spawnSize.z;
+            float spawnRootVolume = Mathf.Pow(spawnVolume, 1.0f / 3.0f);
+            Vector3 axisScaleFactor = spawnSize * (1.0f / spawnRootVolume);
+
+            float idealParticlesPerAxis = Mathf.Pow(numParticles, 1.0f / 3.0f);
+            Vector3 rawParticlesPerAxis = idealParticlesPerAxis * axisScaleFactor;
+
+            computedParticlesPerAxis = new Vector3Int(
+                Mathf.CeilToInt(rawParticlesPerAxis.x),
+                Mathf.CeilToInt(rawParticlesPerAxis.y),
+                Mathf.CeilToInt(rawParticlesPerAxis.z)
+            );
+
+            // Compute particle spacing
+            Vector3 spacingScaleFactor = new Vector3(
+                1.0f / Mathf.Max(1, computedParticlesPerAxis.x - 1),
+                1.0f / Mathf.Max(1, computedParticlesPerAxis.y - 1),
+                1.0f / Mathf.Max(1, computedParticlesPerAxis.z - 1)
+            ); 
+
+            computedSpacing = Vector3.Scale(spawnSize, spacingScaleFactor);
+        }
+
+        Vector3Int[] GetGridPositions() {
             Vector3Int[] gridPositions = new Vector3Int[computedParticlesPerAxis.x * computedParticlesPerAxis.y * computedParticlesPerAxis.z];
             
             for (int x = 0, i = 0; x < computedParticlesPerAxis.x; x++) {
@@ -82,8 +100,7 @@ namespace _3D {
             return array;
         }
 
-        // TODO: cambiar a volumen
-        public float SpawnArea() => areaMultiplier * spawnSize.x * spawnSize.y;
+        public float SpawnVolume() => volumeMultiplier * spawnSize.x * spawnSize.y * spawnSize.z;
 
         void OnDrawGizmos() {
             if (drawSpawnBounds && !Application.isPlaying) {

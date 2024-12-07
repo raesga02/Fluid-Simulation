@@ -16,7 +16,7 @@ namespace _3D {
         public static Mesh GenerateMesh() {
             Vector3[] vertices = GetVertices();
             int[] triangles = GetTriangles();
-            Vector3[] normals = Enumerable.Repeat(new Vector3(0.0f, 0.0f, 1.0f), vertices.Length).ToArray();
+            Vector3[] normals = GetVerticesNormals();
 
             return new Mesh { 
                 name = "Box",
@@ -80,6 +80,21 @@ namespace _3D {
             };
 
             return edgeNormals.Select(n => n.normalized).ToArray();
+        }
+
+        private static Vector3[] GetVerticesNormals() {
+            Vector3[] verticesNormals = new Vector3[] {
+                new Vector3(-0.5f, -0.5f, -0.5f),
+                new Vector3( 0.5f, -0.5f, -0.5f),
+                new Vector3( 0.5f,  0.5f, -0.5f),
+                new Vector3(-0.5f,  0.5f, -0.5f),
+                new Vector3(-0.5f, -0.5f,  0.5f),
+                new Vector3( 0.5f, -0.5f,  0.5f),
+                new Vector3( 0.5f,  0.5f,  0.5f),
+                new Vector3(-0.5f,  0.5f,  0.5f)
+            };
+
+            return verticesNormals.Select(n => n.normalized).ToArray();
         }
 
         private static Vector3[] GetVertices() {
