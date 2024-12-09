@@ -60,7 +60,7 @@ namespace _3D {
                 normals[i] = Vector3.Cross(triangleVertices[1] - triangleVertices[0], triangleVertices[2] - triangleVertices[0]).normalized;
             }
 
-            return normals;
+            return normals.Where((normal, idx) => idx % 2 == 0).ToArray();
         }
 
         public static Vector3[] GetEdgeNormals(Mesh mesh) {
