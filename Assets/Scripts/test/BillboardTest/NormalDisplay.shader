@@ -28,7 +28,13 @@ Shader "Custom/NormalDisplay"
 
             Interpolators vert (MeshData v) {
                 Interpolators o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
+                
+                float4 world_pos = mul(UNITY_MATRIX_M, v.vertex);
+                float4 view_pos = mul(UNITY_MATRIX_V, world_pos);
+                float4 clip_pos = mul(UNITY_MATRIX_P, view_pos);
+
+                o.vertex = clip_pos;
+
                 o.normal = v.normal;
                 o.uv = v.uv;
                 return o;
