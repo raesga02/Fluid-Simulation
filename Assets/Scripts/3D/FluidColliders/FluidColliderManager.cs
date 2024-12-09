@@ -30,7 +30,6 @@ namespace _3D {
         [Header("Fluid Colliders Display Settings")]
         [SerializeField] Color solidColliderColor = new Color(0.5f, 0.5f, 0.25f);
         [SerializeField] Color hollowColliderColor = new Color(0.25f, 0.75f, 0.25f);
-        [SerializeField] bool drawCollidersAABB = false;
 
         [Header("Collider Update Settings")]
         [SerializeField] bool debugUpdateColliders = false;
@@ -71,7 +70,6 @@ namespace _3D {
             foreach (FluidCollider collider in colliders) {
                 collider.solidColliderColor = solidColliderColor;
                 collider.hollowColliderColor = hollowColliderColor;
-                collider.drawColliderAABB = drawCollidersAABB;
             }
         }
 

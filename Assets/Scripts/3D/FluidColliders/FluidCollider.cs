@@ -2,7 +2,7 @@ using System.Linq;
 using UnityEngine;
 
 namespace _3D {
-
+    [ExecuteInEditMode]
     public class FluidCollider : MonoBehaviour {
 
         [Header("Collider Settings")]
@@ -10,15 +10,9 @@ namespace _3D {
 
         [Header("Collider Display Settings")]
         public Light sceneLight;
-        public Material material;
         public Color solidColliderColor = new Color(0.25f, 0.5f, 0.5f);
         public Color hollowColliderColor = new Color(0.25f, 0.75f, 0.25f);
-        [SerializeField] bool drawCollider = true;
         public bool drawColliderAABB = true;
-
-        [Header("Normals Display Settings")]
-        [SerializeField] bool drawFaceNormals = true;
-        [SerializeField] bool drawEdgeNormals = true;
         
         [Header("Computed Collider")]
         [SerializeField] Mesh mesh = null;
@@ -30,17 +24,14 @@ namespace _3D {
         private void Update() {
             UpdateSettings();
 
-            MeshFilter meshFilter = GetComponent<MeshFilter>();
             MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+            Material material = meshRenderer.sharedMaterial;
 
-            if (meshFilter != null && meshRenderer != null) {
-                meshFilter.mesh = mesh;
-                meshRenderer.material = material;
+            meshRenderer.enabled = bounceDirection == BounceDirection.OUTSIDE;
 
-                material.SetColor("_MainColor", solidColliderColor);
-                material.SetColor("_LightColor", sceneLight.color * sceneLight.intensity);
-                material.SetVector("_LightDirection", - sceneLight.transform.forward);
-            }
+            material.SetColor("_MainColor", solidColliderColor);
+            material.SetColor("_LightColor", sceneLight.color * sceneLight.intensity);
+            material.SetVector("_LightDirection", - sceneLight.transform.forward);
         }
 
         public ColliderData GetData() {
@@ -71,64 +62,7 @@ namespace _3D {
         private void OnDrawGizmos() {
             UpdateSettings();
 
-            if (drawCollider && (!Application.isPlaying || bounceDirection == BounceDirection.INSIDE)) { DrawCollider(); }
-            if (drawFaceNormals) { DrawFaceNormals(); }
-            if (drawEdgeNormals) { DrawEdgeNormals(); }
             if (drawColliderAABB) { DrawColliderAABB(); }
-        }
-
-        private void DrawCollider() {
-            var matrix = Gizmos.matrix;
-            Gizmos.matrix = transform.localToWorldMatrix;
-            
-            if (bounceDirection == BounceDirection.OUTSIDE) {
-                Gizmos.color = solidColliderColor;
-                Gizmos.DrawMesh(mesh);
-            }
-            else { // bounceDirection == BounceDirection.INSIDE
-                Gizmos.color = hollowColliderColor;
-                Gizmos.DrawWireMesh(mesh);
-            }
-
-            Gizmos.matrix = matrix;
-        }
-
-        private void DrawFaceNormals() {
-            Vector3[] faceNormals = ColliderMeshGenerator.GetFaceNormals(mesh);
-            
-            for (int i = 0, j = i; i < faceNormals.Length; i++, j+=3) {
-                var matrix = Gizmos.matrix;
-                Gizmos.matrix = transform.localToWorldMatrix;
-
-                Vector3 normal = faceNormals[i];
-                Vector3 wNormal = transform.TransformDirection(normal);
-                Vector3[] triangleVertices = new int[] { mesh.triangles[j], mesh.triangles[j + 1], mesh.triangles[j + 2] }.Select(idx => mesh.vertices[idx]).ToArray();
-                Vector3 triangleCentre = triangleVertices.Aggregate(Vector3.zero, (currentSum, nextVertex) => currentSum + nextVertex) / 3;
-
-                Gizmos.color = new Color(wNormal.x, wNormal.y, wNormal.z, 0.75f);
-                Gizmos.DrawLine(triangleCentre, triangleCentre + normal / 10);
-
-                Gizmos.matrix = matrix;
-            }
-        }
-
-        private void DrawEdgeNormals() {
-            Vector3[] edgeNormals = ColliderMeshGenerator.GetEdgeNormals(mesh);
-            Vector3[] edgeCentres = ColliderMeshGenerator.GetEdgeCentres(mesh);
-
-            for (int i = 0, j = i; i < edgeNormals.Length; i++, j+=3) {
-                var matrix = Gizmos.matrix;
-                Gizmos.matrix = transform.localToWorldMatrix;
-
-                Vector3 normal = edgeNormals[i];
-                Vector3 wNormal = transform.TransformDirection(normal);
-                Vector3 edgeCentre = edgeCentres[i];
-
-                Gizmos.color = new Color(wNormal.x, wNormal.y, wNormal.z, 0.75f);
-                Gizmos.DrawLine(edgeCentre, edgeCentre + normal / 10);
-
-                Gizmos.matrix = matrix;
-            }
         }
 
         private void DrawColliderAABB() {
