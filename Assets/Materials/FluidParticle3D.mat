@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: FluidParticle
-  m_Shader: {fileID: 4800000, guid: ec84d3e1a81f0cb498cf8102a726bf9e, type: 3}
+  m_Name: FluidParticle3D
+  m_Shader: {fileID: 4800000, guid: 7a2377cf5bceca04e81b56b8f97600dd, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -71,7 +71,7 @@ Material:
     - _ColoringMode: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
-    - _DisplaySize: 1
+    - _DisplaySize: 0.5
     - _DstBlend: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
@@ -90,5 +90,7 @@ Material:
     m_Colors:
     - _Color: {r: 0.19691172, g: 0.3532211, b: 0.7075472, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FlatParticleColor: {r: 0, g: 0.37385702, b: 1, a: 0}
+    - _FlatParticleColor: {r: 0.10679956, g: 0.6383551, b: 0.9056604, a: 0}
+    - _LightColor: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
+    - _LightDirection: {r: 0.3213938, g: 0.76604444, b: -0.5566705, a: 0}
   m_BuildTextureStacks: []

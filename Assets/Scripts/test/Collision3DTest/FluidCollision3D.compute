@@ -1,0 +1,218 @@
+#pragma kernel CheckCollision
+#pragma kernel CheckAABBCollision
+
+#define FLOAT_MAX 3.402823e+38
+#define FLOAT_MIN (- FLOAT_MAX)
+#define BLOCK_SIZE 64
+
+
+struct ProjectionLine {
+    float start;
+    float end;
+};
+
+struct ParticleCollider {
+    float3 position;
+    float radius;
+};
+
+struct AABB {
+    float3 min;
+    float3 max;
+};
+
+struct SimulationCollider {
+    int startIdx;
+    int numVertices;
+    int numCollisionNormals;
+    int isBounds;
+    AABB aabb;
+};
+
+struct CollisionDisplacement {
+    float magnitude;
+    float3 direction;
+    float3 displacement;
+};
+
+
+RWStructuredBuffer<float3> _Vertices;
+RWStructuredBuffer<float3> _Normals;
+RWStructuredBuffer<SimulationCollider> _CollidersLookup;
+RWStructuredBuffer<CollisionDisplacement> _CollisionResults;
+RWStructuredBuffer<CollisionDisplacement> _AABBCollisionResults;
+
+int _numVertices;
+int _numCollisionNormals;
+
+float3 _position;
+float _radius;
+
+float3 ReflectAndDampVelocity(float3 velocity, float3 normal, float collisionDamping) {
+    return velocity - (collisionDamping + 1) * dot(velocity, normal) * normal;
+}
+
+ProjectionLine ProjectCollider(SimulationCollider collider, float3 normal) {
+    ProjectionLine colliderProjection = { FLOAT_MAX, FLOAT_MIN };
+    
+    for (int i = 0; i < collider.numVertices; i++) {
+        float vertexProjection = dot(_Vertices[collider.startIdx + i], normal);
+        colliderProjection.start = min(vertexProjection, colliderProjection.start);
+        colliderProjection.end = max(vertexProjection, colliderProjection.end);
+    }
+
+    return colliderProjection;
+}
+
+ProjectionLine ProjectParticle(ParticleCollider particle, float3 normal) {
+    float particleCentreProjection = dot(particle.position, normal);
+    ProjectionLine particleProjection =  { particleCentreProjection - particle.radius, particleCentreProjection + particle.radius};
+    return particleProjection;
+}
+
+float GetCollisionResponseOverLine(ProjectionLine particleProjection, ProjectionLine colliderProjection) {
+    if (particleProjection.start >= colliderProjection.end || particleProjection.end <= colliderProjection.start) {
+        return 0.0;
+    }
+
+    return colliderProjection.end - particleProjection.start;
+}
+
+CollisionDisplacement GetSolidCollisionResponse(ParticleCollider particle, int colliderIdx) {
+    SimulationCollider collider = _CollidersLookup[colliderIdx];
+    CollisionDisplacement collisionResponse = { FLOAT_MAX, float3(0.0, 0.0, 0.0), float3(0.0, 0.0, 0.0) };
+
+    // Early discard with the aabb
+    //if (isOutsideAABB(particle, collider.aabb)) {
+    //    collisionResponse.magnitude = 0.0;
+    //    return collisionResponse;
+    //}
+
+    for (int i = 0; i < collider.numCollisionNormals; i++) {
+        float3 normal = _Normals[collider.startIdx + i];
+        ProjectionLine particleProjection = ProjectParticle(particle, normal);
+        ProjectionLine colliderProjection = ProjectCollider(collider, normal);
+        float responseMagnitude = GetCollisionResponseOverLine(particleProjection, colliderProjection);
+
+        // If there is no overlap
+        if (responseMagnitude == 0.0) {
+            collisionResponse.magnitude = 0.0;
+            collisionResponse.direction = normal;
+            collisionResponse.displacement = float3(0.0, 0.0, 0.0);
+            return collisionResponse;
+        }
+        
+        // If there is a potential overlap
+        if (abs(responseMagnitude) < abs(collisionResponse.magnitude)) {
+            collisionResponse.magnitude = responseMagnitude;
+            collisionResponse.direction = normal;
+            collisionResponse.displacement = responseMagnitude * normal;
+        }
+    }
+
+    return collisionResponse;
+}
+
+CollisionDisplacement GetAABBSolidCollisionResponse(ParticleCollider particle, int colliderIdx) {
+    SimulationCollider collider = _CollidersLookup[colliderIdx];
+    CollisionDisplacement collisionResponse = { FLOAT_MAX, float3(0.0, 0.0, 0.0), float3(0.0, 0.0, 0.0) };
+    float3 aabbHalfSize = (collider.aabb.max - collider.aabb.min) * 0.5 + particle.radius;
+    float3 aabbCentre = collider.aabb.min + aabbHalfSize - particle.radius;
+    
+    float3 distCentreToParticle = particle.position - aabbCentre;
+    float3 quadrant = sign(distCentreToParticle);
+    float3 dst = aabbHalfSize - quadrant * distCentreToParticle;
+
+    float3 needsToBounce = step(0.0, dst);
+    float3 displacement = (quadrant * aabbHalfSize + aabbCentre - particle.position) * needsToBounce;
+
+    // If at least 1 axis doesn't need bouncing == no collision
+    if (any(needsToBounce == 0.0)) {
+        collisionResponse.magnitude = 0.0;
+        return collisionResponse;
+    }
+
+    // If there is a collision
+    float3 magnitudes = abs(displacement);
+    float minMagnitude = min(magnitudes.x, min(magnitudes.y, magnitudes.z));
+    float3 bouncingAxes = step(- minMagnitude, - magnitudes);
+
+    collisionResponse.magnitude = length(bouncingAxes * magnitudes);
+    collisionResponse.direction = normalize(bouncingAxes * quadrant);
+    collisionResponse.displacement = magnitudes * quadrant * bouncingAxes;
+
+    return collisionResponse;
+}
+
+CollisionDisplacement GetAABBHollowCollisionResponse(ParticleCollider particle, int colliderIdx) {
+    SimulationCollider collider = _CollidersLookup[colliderIdx];
+    CollisionDisplacement collisionResponse = { FLOAT_MAX, float3(0.0, 0.0, 0.0), float3(0.0, 0.0, 0.0) };
+    float3 aabbHalfSize = (collider.aabb.max - collider.aabb.min) * 0.5 - particle.radius;
+    float3 aabbCentre = collider.aabb.min + aabbHalfSize + particle.radius;
+    
+    float3 distCentreToParticle = particle.position - aabbCentre;
+    float3 quadrant = sign(distCentreToParticle);
+    float3 dst = aabbHalfSize - quadrant * distCentreToParticle;
+
+    float3 needsToBounce = step(0.0, - dst);
+    float3 displacement = (quadrant * aabbHalfSize + aabbCentre - particle.position) * needsToBounce;
+
+    collisionResponse.magnitude = length(displacement);
+    collisionResponse.direction = - quadrant * needsToBounce;
+    collisionResponse.displacement = displacement;
+
+    return collisionResponse;
+}
+
+CollisionDisplacement GetCollisionResponse(ParticleCollider particle, int colliderIdx) {
+    SimulationCollider collider = _CollidersLookup[colliderIdx];
+
+    if (collider.isBounds == 0) {
+        return GetSolidCollisionResponse(particle, colliderIdx);
+    }
+    else { // collider.isBounds == 1
+        return GetAABBHollowCollisionResponse(particle, colliderIdx);
+    }
+}
+
+CollisionDisplacement GetAABBCollisionResponse(ParticleCollider particle, int colliderIdx) {
+    SimulationCollider collider = _CollidersLookup[colliderIdx];
+
+    if (collider.isBounds == 0) {
+        return GetAABBSolidCollisionResponse(particle, colliderIdx);
+    }
+    else { // collider.isBounds == 1
+        return GetAABBHollowCollisionResponse(particle, colliderIdx);
+    }
+}
+
+
+// Compute kernel side
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void CheckCollision (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x != 0) { return; }
+
+    ParticleCollider particle;
+    particle.position = _position;
+    particle.radius = _radius;
+
+    CollisionDisplacement response = GetCollisionResponse(particle, 0);
+
+    _CollisionResults[id.x] = response;
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void CheckAABBCollision (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x != 0) { return; }
+
+    ParticleCollider particle;
+    particle.position = _position;
+    particle.radius = _radius;
+
+    CollisionDisplacement response = GetAABBCollisionResponse(particle, 0);
+
+    _AABBCollisionResults[id.x] = response;
+}
