@@ -71,12 +71,12 @@ Material:
     - _ColoringMode: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
-    - _DisplaySize: 0.5
+    - _DisplaySize: 0.75
     - _DstBlend: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _MaxDisplayVelocity: 15
+    - _MaxDisplayVelocity: 20
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1

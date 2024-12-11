@@ -18,6 +18,10 @@ namespace _3D {
         [Header("Time Settings")]
         [Range(0.0001f, 1 / 50f)] public float deltaTime;
 
+        [Header("Simulation Control Settings")]
+        [Range(0.1f, 1.5f)] public float simulationSpeedFactor = 1f;
+        [SerializeField] bool isPaused = false;
+
         [Header("References")]
         [SerializeField] FluidSpawnerManager fluidSpawner;
         [SerializeField] FluidColliderManager fluidColliderManager;
@@ -98,7 +102,9 @@ namespace _3D {
         }
 
         void FixedUpdate() {
-            StepSimulation();
+            if (!isPaused) {
+                StepSimulation();
+            }
         }
 
         void StepSimulation() {
@@ -107,6 +113,12 @@ namespace _3D {
 
         void Update() {
             fluidRenderer.RenderFluid();
+
+            HandleUserInput();
+        }
+
+        void HandleUserInput() {
+            if (Input.GetKeyDown("space")) { isPaused = !isPaused; }
         }
 
         private void OnValidate() {
@@ -115,18 +127,18 @@ namespace _3D {
         }
 
         void OnDestroy() {
-            positionsBuffer.Release();
-            predictedPosBuffer.Release();
-            velocitiesBuffer.Release();
-            densitiesBuffer.Release();
-            pressuresBuffer.Release();
+            positionsBuffer?.Release();
+            predictedPosBuffer?.Release();
+            velocitiesBuffer?.Release();
+            densitiesBuffer?.Release();
+            pressuresBuffer?.Release();
 
-            sortedSpatialHashedIndicesBuffer.Release();
-            lookupHashIndicesBuffer.Release();
+            sortedSpatialHashedIndicesBuffer?.Release();
+            lookupHashIndicesBuffer?.Release();
 
-            collidersLookupsBuffer.Release();
-            collidersVerticesBuffer.Release();
-            collidersCollisionNormalsBuffer.Release();
+            collidersLookupsBuffer?.Release();
+            collidersVerticesBuffer?.Release();
+            collidersCollisionNormalsBuffer?.Release();
         }
     }
     
