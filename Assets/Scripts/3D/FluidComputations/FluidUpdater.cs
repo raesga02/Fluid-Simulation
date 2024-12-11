@@ -51,11 +51,9 @@ namespace _3D {
             SetBuffers();
             UpdateSettings();
 
-            /*
             // Resolve initial collisions between spawners and colliders
             int groups = GraphicsHelper.ComputeThreadGroups1D(manager.numParticles, blockSize);
             computeShader.Dispatch(handleCollisionsKernel, groups, 1, 1);
-            */
         }
 
         void SetBuffers() {
