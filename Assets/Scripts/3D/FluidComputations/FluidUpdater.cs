@@ -73,7 +73,6 @@ namespace _3D {
 
         void UpdateSettings() {
             if (needsUpdate) {
-                Debug.Log(manager.deltaTime * manager.simulationSpeedFactor);
                 Time.fixedDeltaTime = manager.deltaTime;
                 computeShader.SetFloat("_deltaTime", manager.deltaTime * manager.simulationSpeedFactor);
                 computeShader.SetInt("_numParticles", manager.numParticles);
