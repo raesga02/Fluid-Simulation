@@ -59,6 +59,15 @@ namespace _3D {
         }
 
         void Start() {
+            Init();
+        }
+
+        void ResetSimulation() {
+            ReleaseBuffers();
+            Init();
+        }
+
+        private void Init() {
             fluidInitialData = fluidSpawner.SpawnFluid();
             (collidersLookups, collidersVertices, collidersCollisionNormals) = fluidColliderManager.GetColliderData();
             numParticles = fluidInitialData.positions.Length;
@@ -101,32 +110,7 @@ namespace _3D {
             collidersCollisionNormalsBuffer.SetData(collidersCollisionNormals);
         }
 
-        void FixedUpdate() {
-            if (!isPaused) {
-                StepSimulation();
-            }
-        }
-
-        void StepSimulation() {
-            fluidUpdater.UpdateFluidState();
-        }
-
-        void Update() {
-            fluidRenderer.RenderFluid();
-
-            HandleUserInput();
-        }
-
-        void HandleUserInput() {
-            if (Input.GetKeyDown("p")) { isPaused = !isPaused; }
-        }
-
-        private void OnValidate() {
-            fluidUpdater.OnValidate();
-            fluidRenderer.OnValidate();
-        }
-
-        void OnDestroy() {
+        void ReleaseBuffers() {
             positionsBuffer?.Release();
             predictedPosBuffer?.Release();
             velocitiesBuffer?.Release();
@@ -139,6 +123,36 @@ namespace _3D {
             collidersLookupsBuffer?.Release();
             collidersVerticesBuffer?.Release();
             collidersCollisionNormalsBuffer?.Release();
+        }
+
+        void FixedUpdate() {
+            if (!isPaused) {
+                StepSimulation();
+            }
+        }
+
+        void StepSimulation() {
+            fluidUpdater.UpdateFluidState();
+        }
+
+        void HandleUserInput() {
+            if (Input.GetKeyDown("p")) { isPaused = !isPaused; }
+            if (Input.GetKeyDown("r")) { ResetSimulation(); }
+        }
+
+        void Update() {
+            fluidRenderer.RenderFluid();
+
+            HandleUserInput();
+        }
+
+        private void OnValidate() {
+            fluidUpdater.OnValidate();
+            fluidRenderer.OnValidate();
+        }
+
+        void OnDestroy() {
+            ReleaseBuffers();
         }
     }
     
