@@ -1,31 +1,38 @@
+using System;
 using UnityEngine;
 
 namespace _3D {
 
     public class UserInputManager : MonoBehaviour {
 
+        [Header("Immersive Mode Controls")]
+        [SerializeField] bool immersiveModeOn = false;
+
         [Header("Movement Control")]
-        public Vector3 targetPosition;
-        public Vector3 velocity = Vector3.zero;
+        [SerializeField] Vector3 targetPosition;
+        [SerializeField] Vector3 velocity = Vector3.zero;
 
         [Header("Rotation Control")]
-        public float mouseSensitivity = 100f;
-        public float xRotation = 0f;
-        public float yRotation = 0f;
+        [SerializeField] float mouseSensitivity = 100f;
+        [SerializeField] float xRotation = 0f;
+        [SerializeField] float yRotation = 0f;
 
-        [Header("Immersive Mode Controls")]
-        public bool immersiveModeOn = false;
-
-        [Header("References")]
-        Camera mainCamera;
+        [Header("Speed Control")]
+        [SerializeField] float defaultSpeedFactor = 1f;
+        [SerializeField] float minSpeedFactor = 0.1f;
+        [SerializeField] float maxSpeedFactor = 1.6f;
+        [SerializeField] float speedChangeStep = 0.2f;
 
         // private fields
         SimulationManager manager;
+        Camera mainCamera;
+
 
         private void Start() {
             manager = SimulationManager.Instance;
             mainCamera = Camera.main;
             targetPosition = mainCamera.transform.localPosition;
+            manager.simulationSpeedFactor = defaultSpeedFactor;
         }
 
         private void Update() {
@@ -36,7 +43,9 @@ namespace _3D {
                 CheckRotation();
                 CheckPause();
                 CheckReset();
+                CheckSpeed();
             }
+
         }
 
         void UpdateImmersionState() {
@@ -79,6 +88,17 @@ namespace _3D {
         void CheckPause() => manager.isPaused = Input.GetKeyDown("p") ? !manager.isPaused : manager.isPaused;
 
         void CheckReset() => manager.pendingReset = Input.GetKeyDown("r") ? true : manager.pendingReset;
+
+        private void CheckSpeed() {
+            float scrollValue = Mathf.Clamp(Input.GetAxis("Mouse ScrollWheel"), -1, 1);
+            float rotationDirection = Mathf.Sign(scrollValue);
+
+            if (Mathf.Abs(scrollValue) > 0.01f) {
+                float newSpeedFactor = manager.simulationSpeedFactor + rotationDirection * speedChangeStep;
+                manager.simulationSpeedFactor = Mathf.Clamp(newSpeedFactor, minSpeedFactor, maxSpeedFactor);
+                manager.RequestSettingsUpdate();
+            }
+        }
     }
 
 }

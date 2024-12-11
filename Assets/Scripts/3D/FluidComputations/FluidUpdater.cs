@@ -43,7 +43,7 @@ namespace _3D {
 
         // Private fields
         SimulationManager manager;
-        bool needsUpdate = true;
+        [HideInInspector] public bool needsUpdate = true;
 
 
         public void Init() {

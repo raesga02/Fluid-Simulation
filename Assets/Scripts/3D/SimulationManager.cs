@@ -19,7 +19,7 @@ namespace _3D {
         [Range(0.0001f, 1 / 50f)] public float deltaTime;
 
         [Header("Simulation Control Settings")]
-        [Range(0.1f, 1.5f)] public float simulationSpeedFactor = 1f;
+        public float simulationSpeedFactor = 1f;
         public bool isPaused = false;
         public bool pendingReset = false;
 
@@ -135,6 +135,10 @@ namespace _3D {
 
         void StepSimulation() {
             fluidUpdater.UpdateFluidState();
+        }
+
+        public void RequestSettingsUpdate() {
+            fluidUpdater.needsUpdate = true;
         }
 
         void Update() {
