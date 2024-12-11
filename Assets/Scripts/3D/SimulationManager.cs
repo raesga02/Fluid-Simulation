@@ -20,7 +20,8 @@ namespace _3D {
 
         [Header("Simulation Control Settings")]
         [Range(0.1f, 1.5f)] public float simulationSpeedFactor = 1f;
-        [SerializeField] bool isPaused = false;
+        public bool isPaused = false;
+        public bool pendingReset = false;
 
         [Header("References")]
         [SerializeField] FluidSpawnerManager fluidSpawner;
@@ -65,6 +66,7 @@ namespace _3D {
         void ResetSimulation() {
             ReleaseBuffers();
             Init();
+            pendingReset = false;
         }
 
         private void Init() {
@@ -135,15 +137,10 @@ namespace _3D {
             fluidUpdater.UpdateFluidState();
         }
 
-        void HandleUserInput() {
-            if (Input.GetKeyDown("p")) { isPaused = !isPaused; }
-            if (Input.GetKeyDown("r")) { ResetSimulation(); }
-        }
-
         void Update() {
-            fluidRenderer.RenderFluid();
+            if (pendingReset) { ResetSimulation(); }
 
-            HandleUserInput();
+            fluidRenderer.RenderFluid();
         }
 
         private void OnValidate() {
