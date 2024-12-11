@@ -119,15 +119,6 @@ namespace _3D {
 
         void HandleUserInput() {
             if (Input.GetKeyDown("p")) { isPaused = !isPaused; }
-
-            // Movement
-            float movementSpeed = 0.25f;
-            if (Input.GetKey("w")) { Camera.main.transform.localPosition += Camera.main.transform.forward * movementSpeed; }
-            if (Input.GetKey("s")) { Camera.main.transform.localPosition -= Camera.main.transform.forward * movementSpeed; }
-            if (Input.GetKey("d")) { Camera.main.transform.localPosition += Camera.main.transform.right * movementSpeed; }
-            if (Input.GetKey("a")) { Camera.main.transform.localPosition -= Camera.main.transform.right * movementSpeed; }
-            if (Input.GetKey("space")) { Camera.main.transform.localPosition += Camera.main.transform.up * movementSpeed; }
-            if (Input.GetKey("left shift")) { Camera.main.transform.localPosition -= Camera.main.transform.up * movementSpeed; }
         }
 
         private void OnValidate() {
