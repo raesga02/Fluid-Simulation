@@ -1,0 +1,160 @@
+#pragma kernel SampleDensities
+#pragma kernel ResetCounter
+#pragma kernel MarchCubes
+
+#define BLOCK_SIZE_AXIS 8
+
+// Helpers
+#include "MarchingTables.hlsl"
+
+// Structs
+
+struct Sample {
+    float3 position;
+    float value;
+};
+
+struct CubeSample {
+    Sample samples[8];
+};
+
+struct Vertex {
+    float3 position;
+    float3 normal;
+};
+
+struct Triangle {
+    int a;
+    int b;
+    int c;
+};
+
+
+// Shader properties (Common data)
+float _isoLevel;
+float _samplesPerAxis;
+int _maxNumVertices;
+
+
+// Structured buffers (Per instance data)
+RWStructuredBuffer<Sample> _Samples;
+RWStructuredBuffer<Vertex> _Vertices;
+RWStructuredBuffer<uint> _VerticesCounter;
+AppendStructuredBuffer<Triangle> _Triangles;
+
+
+// Helper functions
+
+bool IsOutOfRange(int3 value, int3 max) {
+    return any(value >= max);
+}
+
+int ComputeCubeIndex(CubeSample cubeSample) {
+    int cubeIndex = 0;
+
+    if (cubeSample.samples[0].value < _isoLevel) { cubeIndex != 1; }
+    if (cubeSample.samples[1].value < _isoLevel) { cubeIndex != 2; }
+    if (cubeSample.samples[2].value < _isoLevel) { cubeIndex != 4; }
+    if (cubeSample.samples[3].value < _isoLevel) { cubeIndex != 8; }
+    if (cubeSample.samples[4].value < _isoLevel) { cubeIndex != 16; }
+    if (cubeSample.samples[5].value < _isoLevel) { cubeIndex != 32; }
+    if (cubeSample.samples[6].value < _isoLevel) { cubeIndex != 64; }
+    if (cubeSample.samples[7].value < _isoLevel) { cubeIndex != 128; }
+
+    return cubeIndex;
+}
+
+int IndexFromCoords(int x, int y, int z) {
+    // TODO: check performance with z_curve
+    return x + y * _samplesPerAxis + z * _samplesPerAxis * _samplesPerAxis;
+}
+
+CubeSample LoadSamples(int3 pos) {
+    CubeSample cubeSample = {{ 
+        _Samples[IndexFromCoords(pos.x    , pos.y    , pos.z    )],
+        _Samples[IndexFromCoords(pos.x + 1, pos.y    , pos.z    )],
+        _Samples[IndexFromCoords(pos.x + 1, pos.y    , pos.z + 1)],
+        _Samples[IndexFromCoords(pos.x    , pos.y    , pos.z + 1)],
+        _Samples[IndexFromCoords(pos.x    , pos.y + 1, pos.z    )],
+        _Samples[IndexFromCoords(pos.x + 1, pos.y + 1, pos.z    )],
+        _Samples[IndexFromCoords(pos.x + 1, pos.y + 1, pos.z + 1)],
+        _Samples[IndexFromCoords(pos.x    , pos.y + 1, pos.z + 1)]
+    }};
+
+    return cubeSample;
+}
+
+float3 InterpolateSamples(Sample a, Sample b) {
+    float t = (_isoLevel - a.value) / (b.value - a.value);
+    return a.position + t * (b.position - a.position);
+}
+
+int GetNumberOfTriangles(int cubeIndex) {
+    for (int i = 0, counter = 0; i < 15; i += 3) {
+        counter += triangleConnections[cubeIndex][i] != -1;
+    }
+
+    return counter;
+}
+
+
+// Kernels
+
+[numthreads(BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS)]
+void SampleDensities (uint3 id : SV_DispatchThreadID) {
+    if (IsOutOfRange(id, int3(_samplesPerAxis, _samplesPerAxis, _samplesPerAxis))) { return; }
+    int sampleIdx = IndexFromCoords(id.x, id.y, id.z);
+    float value = sqrt(dot(id, id));
+    _Samples[sampleIdx].value = value;
+}
+
+[numthreads(1, 1, 1)]
+void ResetCounter (uint3 id : SV_DispatchThreadID) {
+    _VerticesCounter[0] = 0;
+}
+
+[numthreads(BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS)]
+void MarchCubes (uint3 id : SV_DispatchThreadID) {
+    if (IsOutOfRange(id, int3(_samplesPerAxis - 1, _samplesPerAxis - 1, _samplesPerAxis - 1))) { return; }
+
+    // Compute the configuration
+    CubeSample cubeSample = LoadSamples(id);
+    int cubeIndex = ComputeCubeIndex(cubeSample);
+    if (cubeIndex == 0 || cubeIndex == 255) { return; } // No triangles cases
+
+    // Count the number of triangles, reserve spot for the vertices
+    int numTriangles = GetNumberOfTriangles(cubeIndex);
+    int numVertices = numTriangles * 3;
+    int vertexBaseIdx;
+    InterlockedAdd(_VerticesCounter[0], numTriangles * 3, vertexBaseIdx);
+    if (vertexBaseIdx + numVertices > _maxNumVertices) { return; } // If there is not enough space in the buffers
+
+    // Build Vertices and Triangles
+    for (int i = 0; i < numVertices; i += 3) {
+        int triangleStartIndex  = vertexBaseIdx + i;
+
+        // Get edge vertices
+        int2 edge0Verts = edgeConnection[triangleConnections[cubeIndex][i]];
+        int2 edge1Verts = edgeConnection[triangleConnections[cubeIndex][i + 1]];
+        int2 edge2Verts = edgeConnection[triangleConnections[cubeIndex][i + 2]];
+
+        // Interpolate the edge vertices
+        Vertex vA = { InterpolateSamples(cubeSample.samples[edge0Verts.x], cubeSample.samples[edge0Verts.y]), float3(0, 0, 0) };
+        Vertex vB = { InterpolateSamples(cubeSample.samples[edge1Verts.x], cubeSample.samples[edge1Verts.y]), float3(0, 0, 0) };
+        Vertex vC = { InterpolateSamples(cubeSample.samples[edge2Verts.x], cubeSample.samples[edge2Verts.y]), float3(0, 0, 0) };
+
+        // Compute normals
+        //TODO
+
+        // Create the triangle
+        Triangle tri = { triangleStartIndex, triangleStartIndex + 1, triangleStartIndex + 2 };
+
+        // Save the vertices
+        _Vertices[triangleStartIndex] = vA;
+        _Vertices[triangleStartIndex + 1] = vB;
+        _Vertices[triangleStartIndex + 2] = vC;
+
+        // Save the triangle
+        _Triangles.Append(tri);
+    }
+}
