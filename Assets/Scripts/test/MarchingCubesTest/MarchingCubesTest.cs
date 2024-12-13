@@ -20,6 +20,7 @@ public class MarchingCubesTest : MonoBehaviour {
     [SerializeField] Vector3 bounds;
     [SerializeField, Range(2, 15)] int samplesPerAxis;
     [SerializeField] float isoLevel;
+    [SerializeField] bool resetPending;
 
     [Header("Display Settings")]
     [SerializeField] bool drawBounds;
@@ -53,13 +54,24 @@ public class MarchingCubesTest : MonoBehaviour {
     const int resetCounterKernel = 1;
     const int marchCubesKernel = 2;
 
+    // Private fields
     bool needsUpdate = true;
 
 
     void Start() {
+        Init();
+    }   
+
+    void Init() {
         UpdateSettings();
 
-        samplesInitialData = Enumerable.Repeat(new Sample() { position = Vector3.zero, value = 0.0f }, samplesPerAxis * samplesPerAxis * samplesPerAxis).ToArray();
+        samplesInitialData = Enumerable.Range(0, samplesPerAxis * samplesPerAxis * samplesPerAxis).Select(idx => {
+            int n = samplesPerAxis * samplesPerAxis * samplesPerAxis;
+            int x = idx % n;
+            int y = (idx / n) % n;
+            int z = (idx / (n * n)) % n;
+            return new Sample() { position = new Vector3(x, y, z), value = 0.0f };
+        }).ToArray();
         verticesInitialData = Enumerable.Repeat(new Vertex() { position = Vector3.zero, normal = Vector3.zero }, maxNumTriangles * 3).ToArray();
         verticesCounterInitialData = new uint[1] { 0 };
         trianglesInitialData = Enumerable.Repeat(0, maxNumTriangles * 3).ToArray();
@@ -67,7 +79,14 @@ public class MarchingCubesTest : MonoBehaviour {
         InstantiateComputeBuffers();
         FillComputeBuffers();
         SetBuffers();
-    }   
+    }
+
+    void ResetDisplay() {
+        ReleaseBuffers();
+        Init();
+
+        resetPending = false;
+    }
 
     void InstantiateComputeBuffers() {
         samplesBuffer = new ComputeBuffer(samplesPerAxis * samplesPerAxis * samplesPerAxis, Marshal.SizeOf(typeof(Sample)));
@@ -98,6 +117,7 @@ public class MarchingCubesTest : MonoBehaviour {
     }
 
     void Update() {
+        if (resetPending) { ResetDisplay(); }
         UpdateSettings();
 
         // Sample the densities
@@ -122,7 +142,6 @@ public class MarchingCubesTest : MonoBehaviour {
 
     void UpdateSettings() {
         if (!needsUpdate) { return; }
-
 
         numCubes = (samplesPerAxis - 1) * (samplesPerAxis - 1) * (samplesPerAxis - 1);
         maxNumTriangles = 5 * numCubes;
