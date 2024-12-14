@@ -207,8 +207,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 158852812}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.25291127, y: -0.2909946, z: 0.080075145, w: -0.9192094}
-  m_LocalPosition: {x: -16.978876, y: 15.252486, z: -18.837421}
+  m_LocalRotation: {x: 0.20693992, y: -0.022012502, z: 0.004651754, w: 0.97809494}
+  m_LocalPosition: {x: 0.33447647, y: 1.4386883, z: -1.4870968}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -337,20 +337,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7618eda9494dbe4d92a6f18815ec207, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bounds: {x: 20, y: 20, z: 20}
-  samplesPerAxis: 5
-  isoLevel: 6.45
+  bounds: {x: 10, y: 10, z: 10}
+  samplesPerAxis: 6
+  isoLevel: 0
+  resetPending: 0
   drawBounds: 1
-  drawSamplePoints: 1
+  drawSamplePoints: 0
   averageTrianglesPerCube: 2.21
   activeFraction: 0.612
-  numCubes: 64
-  maxNumTriangles: 320
-  heuristicNumTriangles: 86
+  numCubes: 125
+  maxNumTriangles: 625
+  heuristicNumTriangles: 169
   material: {fileID: 0}
   computeShader: {fileID: 7200000, guid: f23b6b0f1f07a0a438e95222c237debc, type: 3}
   verticesCounterInitialData: 
   trianglesInitialData: 
+  verticesAdded: 0
+  vertPoss: []
+  normDir: []
+  triangIdx: 
+  draw: 0
 --- !u!4 &1897975407
 Transform:
   m_ObjectHideFlags: 0
@@ -360,7 +366,7 @@ Transform:
   m_GameObject: {fileID: 1897975405}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.15, y: 2.47, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

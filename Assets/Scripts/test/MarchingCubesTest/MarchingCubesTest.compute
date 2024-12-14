@@ -52,14 +52,14 @@ bool IsOutOfRange(int3 value, int3 max) {
 int ComputeCubeIndex(CubeSample cubeSample) {
     int cubeIndex = 0;
 
-    if (cubeSample.samples[0].value < _isoLevel) { cubeIndex != 1; }
-    if (cubeSample.samples[1].value < _isoLevel) { cubeIndex != 2; }
-    if (cubeSample.samples[2].value < _isoLevel) { cubeIndex != 4; }
-    if (cubeSample.samples[3].value < _isoLevel) { cubeIndex != 8; }
-    if (cubeSample.samples[4].value < _isoLevel) { cubeIndex != 16; }
-    if (cubeSample.samples[5].value < _isoLevel) { cubeIndex != 32; }
-    if (cubeSample.samples[6].value < _isoLevel) { cubeIndex != 64; }
-    if (cubeSample.samples[7].value < _isoLevel) { cubeIndex != 128; }
+    if (cubeSample.samples[0].value < _isoLevel) { cubeIndex |= 1; }
+    if (cubeSample.samples[1].value < _isoLevel) { cubeIndex |= 2; }
+    if (cubeSample.samples[2].value < _isoLevel) { cubeIndex |= 4; }
+    if (cubeSample.samples[3].value < _isoLevel) { cubeIndex |= 8; }
+    if (cubeSample.samples[4].value < _isoLevel) { cubeIndex |= 16; }
+    if (cubeSample.samples[5].value < _isoLevel) { cubeIndex |= 32; }
+    if (cubeSample.samples[6].value < _isoLevel) { cubeIndex |= 64; }
+    if (cubeSample.samples[7].value < _isoLevel) { cubeIndex |= 128; }
 
     return cubeIndex;
 }
@@ -80,6 +80,17 @@ CubeSample LoadSamples(int3 pos) {
         _Samples[IndexFromCoords(pos.x + 1, pos.y + 1, pos.z + 1)],
         _Samples[IndexFromCoords(pos.x    , pos.y + 1, pos.z + 1)]
     }};
+
+    //float ON = _isoLevel + 10;
+    //float OFF = _isoLevel - 10;
+    //cubeSample.samples[0].value = OFF;
+    //cubeSample.samples[1].value = OFF;
+    //cubeSample.samples[2].value = OFF;
+    //cubeSample.samples[3].value = OFF;
+    //cubeSample.samples[4].value = OFF;
+    //cubeSample.samples[5].value = OFF;
+    //cubeSample.samples[6].value = OFF;
+    //cubeSample.samples[7].value = OFF;
 
     return cubeSample;
 }
@@ -104,8 +115,9 @@ int GetNumberOfTriangles(int cubeIndex) {
 void SampleDensities (uint3 id : SV_DispatchThreadID) {
     if (IsOutOfRange(id, int3(_samplesPerAxis, _samplesPerAxis, _samplesPerAxis))) { return; }
     int sampleIdx = IndexFromCoords(id.x, id.y, id.z);
-    float value = sqrt(dot(id, id));
-    _Samples[sampleIdx].value = value;
+    
+    float r2 = dot(_Samples[sampleIdx].position, _Samples[sampleIdx].position);
+    _Samples[sampleIdx].value = sqrt(r2);
 }
 
 [numthreads(1, 1, 1)]
@@ -143,8 +155,14 @@ void MarchCubes (uint3 id : SV_DispatchThreadID) {
         Vertex vB = { InterpolateSamples(cubeSample.samples[edge1Verts.x], cubeSample.samples[edge1Verts.y]), float3(0, 0, 0) };
         Vertex vC = { InterpolateSamples(cubeSample.samples[edge2Verts.x], cubeSample.samples[edge2Verts.y]), float3(0, 0, 0) };
 
-        // Compute normals
-        //TODO
+        // TODO: Compute normals
+        float3 u = vB.position - vA.position;
+        float3 v = vC.position - vA.position;
+        float3 n = normalize(cross(u, v));
+
+        vA.normal = n;
+        vB.normal = n;
+        vC.normal = n;
 
         // Create the triangle
         Triangle tri = { triangleStartIndex, triangleStartIndex + 1, triangleStartIndex + 2 };
@@ -158,3 +176,7 @@ void MarchCubes (uint3 id : SV_DispatchThreadID) {
         _Triangles.Append(tri);
     }
 }
+
+//int test;
+//InterlockedExchange(_VerticesCounter[0], tri.c, test);
+//return;
