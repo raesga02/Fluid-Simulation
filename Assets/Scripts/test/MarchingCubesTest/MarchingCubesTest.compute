@@ -1,7 +1,7 @@
 #pragma kernel SampleDensities
 #pragma kernel ResetCounter
 #pragma kernel MarchCubes
-#pragma kernel PrepareDrawArgs
+#pragma kernel PrepareDrawIndirectArgs
 
 #define BLOCK_SIZE_AXIS 8
 
@@ -19,15 +19,11 @@ struct CubeSample {
     Sample samples[8];
 };
 
-struct Vertex {
-    float3 position;
-    float3 normal;
-};
-
-struct Triangle {
-    int a;
-    int b;
-    int c;
+struct IndirectDrawArgs {
+    uint vertexCountPerInstance;
+    uint instanceCount;
+    uint startVertex;
+    uint startInstance;
 };
 
 
@@ -39,10 +35,10 @@ int _maxNumVertices;
 
 // Structured buffers (Per instance data)
 RWStructuredBuffer<Sample> _Samples;
-RWStructuredBuffer<Vertex> _Vertices;
+RWStructuredBuffer<float3> _Vertices;
+RWStructuredBuffer<float3> _Normals;
 RWStructuredBuffer<uint> _VerticesCounter;
-AppendStructuredBuffer<Triangle> _Triangles;
-RWStructuredBuffer<uint> _ArgsBuffer;
+RWStructuredBuffer<IndirectDrawArgs> _IndirectDrawArgs;
 
 
 // Helper functions
@@ -85,7 +81,7 @@ CubeSample LoadSamples(int3 pos) {
 
     //float ON = _isoLevel + 10;
     //float OFF = _isoLevel - 10;
-    //cubeSample.samples[0].value = OFF;
+    //cubeSample.samples[0].value = ON;
     //cubeSample.samples[1].value = OFF;
     //cubeSample.samples[2].value = OFF;
     //cubeSample.samples[3].value = OFF;
@@ -118,8 +114,18 @@ void SampleDensities (uint3 id : SV_DispatchThreadID) {
     if (IsOutOfRange(id, int3(_samplesPerAxis, _samplesPerAxis, _samplesPerAxis))) { return; }
     int sampleIdx = IndexFromCoords(id.x, id.y, id.z);
     
-    float r2 = dot(_Samples[sampleIdx].position, _Samples[sampleIdx].position);
-    _Samples[sampleIdx].value = sqrt(r2);
+    //float r2 = dot(_Samples[sampleIdx].position, _Samples[sampleIdx].position);
+    //_Samples[sampleIdx].value = sqrt(r2);
+
+    float3 samplePos = _Samples[sampleIdx].position;
+    float z_saddle = samplePos.x * samplePos.x - samplePos.y * samplePos.y;
+    float dst = abs(samplePos.z - z_saddle);
+    if (dst <= 0.5) {
+        _Samples[sampleIdx].value = _isoLevel - 10;
+    }
+    else {
+        _Samples[sampleIdx].value = _isoLevel + 10;
+    }
 }
 
 [numthreads(1, 1, 1)]
@@ -153,37 +159,31 @@ void MarchCubes (uint3 id : SV_DispatchThreadID) {
         int2 edge2Verts = edgeConnection[triangleConnections[cubeIndex][i + 2]];
 
         // Interpolate the edge vertices
-        Vertex vA = { InterpolateSamples(cubeSample.samples[edge0Verts.x], cubeSample.samples[edge0Verts.y]), float3(0, 0, 0) };
-        Vertex vB = { InterpolateSamples(cubeSample.samples[edge1Verts.x], cubeSample.samples[edge1Verts.y]), float3(0, 0, 0) };
-        Vertex vC = { InterpolateSamples(cubeSample.samples[edge2Verts.x], cubeSample.samples[edge2Verts.y]), float3(0, 0, 0) };
+        float3 vA = InterpolateSamples(cubeSample.samples[edge0Verts.x], cubeSample.samples[edge0Verts.y]);
+        float3 vB = InterpolateSamples(cubeSample.samples[edge1Verts.x], cubeSample.samples[edge1Verts.y]);
+        float3 vC = InterpolateSamples(cubeSample.samples[edge2Verts.x], cubeSample.samples[edge2Verts.y]);
 
         // TODO: Compute normals
-        float3 u = vB.position - vA.position;
-        float3 v = vC.position - vA.position;
+        float3 u = vB - vA;
+        float3 v = vC - vA;
         float3 n = normalize(cross(u, v));
-
-        vA.normal = n;
-        vB.normal = n;
-        vC.normal = n;
-
-        // Create the triangle
-        Triangle tri = { triangleStartIndex, triangleStartIndex + 1, triangleStartIndex + 2 };
 
         // Save the vertices
         _Vertices[triangleStartIndex] = vA;
         _Vertices[triangleStartIndex + 1] = vB;
         _Vertices[triangleStartIndex + 2] = vC;
 
-        // Save the triangle
-        _Triangles.Append(tri);
+        // Save the normals
+        _Normals[triangleStartIndex] = n;
+        _Normals[triangleStartIndex + 1] = n;
+        _Normals[triangleStartIndex + 2] = n;
     }
 }
 
 [numthreads(1, 1, 1)]
-void PrepareDrawArgs (uint3 id : SV_DispatchThreadID) {
-    _ArgsBuffer[0] = _VerticesCounter[0];
-    _ArgsBuffer[1] = _VerticesCounter[0];
-    _ArgsBuffer[2] = 1;
-    _ArgsBuffer[3] = 0;
-    _ArgsBuffer[4] = 0;
+void PrepareDrawIndirectArgs (uint3 id : SV_DispatchThreadID) {
+    _IndirectDrawArgs[0].instanceCount = 1;
+    _IndirectDrawArgs[0].startInstance = 0;
+    _IndirectDrawArgs[0].startVertex = 0;
+    _IndirectDrawArgs[0].vertexCountPerInstance = _VerticesCounter[0];
 }
