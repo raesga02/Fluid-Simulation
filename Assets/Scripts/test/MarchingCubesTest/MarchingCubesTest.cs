@@ -190,7 +190,12 @@ public class MarchingCubesTest : MonoBehaviour {
                 Vector3 normal = normDir[i];
                 Vector3 avgPos = triangleVertices.Aggregate(Vector3.zero, (acc, v) => acc + v) / 3;
                 Gizmos.color = new Color(0.35f, 0.65f, 0.85f);
-                Gizmos.DrawLineStrip(triangleVertices, true);
+                Gizmos.DrawWireMesh(new Mesh {
+                    name = "MarchedSphere",
+                    vertices = vertPoss.Take((int)verticesAdded).ToArray(),
+                    triangles = triangIdx.Take((int)verticesAdded).ToArray(),
+                    normals = normDir.Take((int)verticesAdded).ToArray()
+                });
                 Gizmos.color = new Color(normal.x, normal.y, normal.z, 1.0f);
                 Gizmos.DrawLine(avgPos, avgPos + normal * 0.2f);
             }
