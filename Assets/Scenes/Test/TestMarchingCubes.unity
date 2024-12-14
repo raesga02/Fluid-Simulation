@@ -207,13 +207,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 158852812}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.20693992, y: -0.022012502, z: 0.004651754, w: 0.97809494}
-  m_LocalPosition: {x: 0.33447647, y: 1.4386883, z: -1.4870968}
+  m_LocalRotation: {x: 0.024212193, y: 0.30341104, z: -0.00799518, w: 0.9525185}
+  m_LocalPosition: {x: -6.630764, y: 0.12707233, z: -8.97053}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!1 &974126896
 GameObject:
   m_ObjectHideFlags: 0
@@ -338,25 +338,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bounds: {x: 10, y: 10, z: 10}
-  samplesPerAxis: 6
-  isoLevel: 0
+  samplesPerAxis: 10
+  isoLevel: 2
   resetPending: 0
   drawBounds: 1
   drawSamplePoints: 0
   averageTrianglesPerCube: 2.21
   activeFraction: 0.612
-  numCubes: 125
-  maxNumTriangles: 625
-  heuristicNumTriangles: 169
-  material: {fileID: 0}
+  numCubes: 27
+  maxNumTriangles: 135
+  heuristicNumTriangles: 36
+  material: {fileID: 2100000, guid: 2f152a08cf2728e4bacc8654cf5f041c, type: 2}
   computeShader: {fileID: 7200000, guid: f23b6b0f1f07a0a438e95222c237debc, type: 3}
+  sceneLight: {fileID: 974126897}
   verticesCounterInitialData: 
   trianglesInitialData: 
-  verticesAdded: 0
-  vertPoss: []
-  normDir: []
-  triangIdx: 
-  draw: 0
 --- !u!4 &1897975407
 Transform:
   m_ObjectHideFlags: 0

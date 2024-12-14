@@ -24,12 +24,6 @@ public static class GraphicsHelper {
         return argsBuffer;
     }
 
-    //public static ComputeBuffer CreateProceduralIndirectArgsBuffer() {
-    //    ComputeBuffer argsBuffer = null;
-    //
-    //    return argsBuffer;
-    //}
-
 
     // Compute shaders
 

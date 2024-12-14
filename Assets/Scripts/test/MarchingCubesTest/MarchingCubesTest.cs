@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct Sample {
@@ -36,12 +37,14 @@ public class MarchingCubesTest : MonoBehaviour {
     [Header("References")]
     [SerializeField] Material material;
     [SerializeField] ComputeShader computeShader;
+    [SerializeField] Light sceneLight;
 
     // Compute buffers
     public ComputeBuffer samplesBuffer { get; private set; }
     public ComputeBuffer verticesBuffer { get; private set; }
     public ComputeBuffer verticesCounterBuffer { get; private set; }
     public ComputeBuffer trianglesBuffer { get; private set; }
+    public ComputeBuffer argsBuffer { get; private set; }
 
     // Initial compute buffers data
     [HideInInspector] public Sample[] samplesInitialData;
@@ -53,17 +56,10 @@ public class MarchingCubesTest : MonoBehaviour {
     const int sampleDensitiesKernel = 0;
     const int resetCounterKernel = 1;
     const int marchCubesKernel = 2;
+    const int prepareDrawArgsKernel = 3;
 
     // Private fields
     bool needsUpdate = true;
-
-    // DEBUG
-    [Header("DEBUG")]
-    public uint verticesAdded;
-    public Vector3[] vertPoss;
-    public Vector3[] normDir;
-    public int[] triangIdx;
-    public bool draw = false;
 
 
     void Start() {
@@ -72,7 +68,21 @@ public class MarchingCubesTest : MonoBehaviour {
 
     void Init() {
         UpdateSettings();
+        
+        GenerateInitialData();
+        InstantiateComputeBuffers();
+        FillComputeBuffers();
+        SetBuffers();
+    }
 
+    void ResetDisplay() {
+        ReleaseBuffers();
+        Init();
+
+        resetPending = false;
+    }
+
+    void GenerateInitialData() {
         samplesInitialData = new Sample[samplesPerAxis * samplesPerAxis * samplesPerAxis];
         Vector3 spacing = bounds / (samplesPerAxis - 1);
         Vector3 origin = transform.position - bounds * 0.5f;
@@ -88,17 +98,6 @@ public class MarchingCubesTest : MonoBehaviour {
         verticesInitialData = Enumerable.Repeat(new Vertex() { position = Vector3.zero, normal = Vector3.zero }, maxNumTriangles * 3).ToArray();
         verticesCounterInitialData = new uint[1] { 0 };
         trianglesInitialData = Enumerable.Repeat(0, maxNumTriangles * 3).ToArray();
-
-        InstantiateComputeBuffers();
-        FillComputeBuffers();
-        SetBuffers();
-    }
-
-    void ResetDisplay() {
-        ReleaseBuffers();
-        Init();
-
-        resetPending = false;
     }
 
     void InstantiateComputeBuffers() {
@@ -106,6 +105,7 @@ public class MarchingCubesTest : MonoBehaviour {
         verticesBuffer = new ComputeBuffer(maxNumTriangles * 3, sizeof(float) * 6);
         verticesCounterBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.Counter);
         trianglesBuffer = new ComputeBuffer(maxNumTriangles * 3, sizeof(int), ComputeBufferType.Append);
+        argsBuffer = new ComputeBuffer(1, sizeof(int) * 5, ComputeBufferType.IndirectArguments);
     }
 
     void FillComputeBuffers() {
@@ -113,13 +113,18 @@ public class MarchingCubesTest : MonoBehaviour {
         verticesBuffer.SetData(verticesInitialData);
         verticesCounterBuffer.SetData(verticesCounterInitialData);
         trianglesBuffer.SetData(trianglesInitialData);
+        argsBuffer.SetData(new int[] { 0, 0, 1, 0, 0 });
     }
 
     void SetBuffers() {
         GraphicsHelper.SetBufferKernels(computeShader, "_Samples", samplesBuffer, marchCubesKernel, sampleDensitiesKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_Vertices", verticesBuffer, marchCubesKernel);
-        GraphicsHelper.SetBufferKernels(computeShader, "_VerticesCounter", verticesCounterBuffer, marchCubesKernel, resetCounterKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_VerticesCounter", verticesCounterBuffer, marchCubesKernel, resetCounterKernel, prepareDrawArgsKernel);
         GraphicsHelper.SetBufferKernels(computeShader, "_Triangles", trianglesBuffer, marchCubesKernel);
+        GraphicsHelper.SetBufferKernels(computeShader, "_ArgsBuffer", argsBuffer, prepareDrawArgsKernel);
+
+        material.SetBuffer("_Vertices", verticesBuffer);
+        material.SetBuffer("_Indices", trianglesBuffer);
     }
 
     void ReleaseBuffers() {
@@ -127,6 +132,7 @@ public class MarchingCubesTest : MonoBehaviour {
         verticesBuffer?.Release();
         verticesCounterBuffer?.Release();
         trianglesBuffer?.Release();
+        argsBuffer?.Release();
     }
 
     void Update() {
@@ -145,20 +151,15 @@ public class MarchingCubesTest : MonoBehaviour {
         Vector3Int numGroupsMarch = GraphicsHelper.ComputeThreadGroups3D(samplesPerAxis - 1, samplesPerAxis - 1, samplesPerAxis - 1, Vector3Int.one * 8);
         computeShader.Dispatch(marchCubesKernel, numGroupsMarch.x, numGroupsMarch.y, numGroupsMarch.z);
 
-        // Get the number of vertices to draw
-        // TODO: change with dispatch kernel that modifies args buffer
-        uint[] numVerticesCounter = new uint[1];
-        verticesCounterBuffer.GetData(numVerticesCounter);
-        verticesAdded = numVerticesCounter[0];
-
-        verticesBuffer.GetData(verticesInitialData);
-        vertPoss = verticesInitialData.Select(vertex => vertex.position).ToArray();
-        normDir = verticesInitialData.Select(vertex => vertex.normal).ToArray();
-        trianglesBuffer.GetData(trianglesInitialData);
-        triangIdx = trianglesInitialData;
-
-        // TODO: Draw the mesh
-        draw = true;
+        // Draw the mesh
+        computeShader.Dispatch(prepareDrawArgsKernel, 1, 1, 1);
+        Graphics.DrawProceduralIndirect(
+            material,
+            new Bounds(transform.position, bounds * 2),
+            MeshTopology.Triangles,
+            argsBuffer
+        );
+        
     }
 
     void UpdateSettings() {
@@ -176,30 +177,12 @@ public class MarchingCubesTest : MonoBehaviour {
     }
 
     private void OnValidate() {
-        needsUpdate = true;
-        if (!Application.isPlaying) { UpdateSettings(); }
+        needsUpdate = true;   
     }
 
     private void OnDrawGizmos() {
         if (drawBounds) { DrawBounds(); }
         if (drawSamplePoints) { DrawSamplePoints(); }
-
-        if (draw) {
-            for (int i = 0; i < verticesAdded; i+= 3) {
-                Vector3[] triangleVertices = vertPoss.Skip(i).Take(3).ToArray();
-                Vector3 normal = normDir[i];
-                Vector3 avgPos = triangleVertices.Aggregate(Vector3.zero, (acc, v) => acc + v) / 3;
-                Gizmos.color = new Color(0.35f, 0.65f, 0.85f);
-                Gizmos.DrawWireMesh(new Mesh {
-                    name = "MarchedSphere",
-                    vertices = vertPoss.Take((int)verticesAdded).ToArray(),
-                    triangles = triangIdx.Take((int)verticesAdded).ToArray(),
-                    normals = normDir.Take((int)verticesAdded).ToArray()
-                });
-                Gizmos.color = new Color(normal.x, normal.y, normal.z, 1.0f);
-                Gizmos.DrawLine(avgPos, avgPos + normal * 0.2f);
-            }
-        }
     }
 
     void DrawBounds() {
@@ -208,7 +191,7 @@ public class MarchingCubesTest : MonoBehaviour {
     }
 
     private void DrawSamplePoints() {
-        Gizmos.color = new Color(0.25f, 0.5f, 0.75f);
+        Gizmos.color = new Color(0.25f, 0.5f, 0.75f, 0.5f);
         Vector3 spacing = bounds / (samplesPerAxis - 1);
         Vector3 origin = transform.position - bounds * 0.5f;
         for (int i = 0; i < samplesPerAxis; i++) {

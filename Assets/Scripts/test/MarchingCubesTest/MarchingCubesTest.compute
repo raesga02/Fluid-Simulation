@@ -1,6 +1,7 @@
 #pragma kernel SampleDensities
 #pragma kernel ResetCounter
 #pragma kernel MarchCubes
+#pragma kernel PrepareDrawArgs
 
 #define BLOCK_SIZE_AXIS 8
 
@@ -41,6 +42,7 @@ RWStructuredBuffer<Sample> _Samples;
 RWStructuredBuffer<Vertex> _Vertices;
 RWStructuredBuffer<uint> _VerticesCounter;
 AppendStructuredBuffer<Triangle> _Triangles;
+RWStructuredBuffer<uint> _ArgsBuffer;
 
 
 // Helper functions
@@ -177,6 +179,11 @@ void MarchCubes (uint3 id : SV_DispatchThreadID) {
     }
 }
 
-//int test;
-//InterlockedExchange(_VerticesCounter[0], tri.c, test);
-//return;
+[numthreads(1, 1, 1)]
+void PrepareDrawArgs (uint3 id : SV_DispatchThreadID) {
+    _ArgsBuffer[0] = _VerticesCounter[0];
+    _ArgsBuffer[1] = _VerticesCounter[0];
+    _ArgsBuffer[2] = 1;
+    _ArgsBuffer[3] = 0;
+    _ArgsBuffer[4] = 0;
+}
