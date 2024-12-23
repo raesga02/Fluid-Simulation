@@ -30,16 +30,16 @@ namespace _3D {
         [SerializeField] ComputeShader computeShader;
 
         // Compute kernel IDs
-        const int applyExternalForcesKernel = 0;
-        const int computeSpatialHashesKernel = 1;
-        const int bitonicMergeStepKernel = 2;
-        const int buildSpatialHashLookupKernel = 3;
-        const int calculateDensitiesKernel = 4;
-        const int calculatePressuresKernel = 5;
-        const int applyPressureForceKernel = 6;
-        const int applyViscosityForceKernel = 7;
-        const int integratePositionKernel = 8;
-        const int handleCollisionsKernel = 9;
+        int applyExternalForcesKernel = 0;
+        int computeSpatialHashesKernel = 1;
+        int bitonicMergeStepKernel = 2;
+        int buildSpatialHashLookupKernel = 3;
+        int calculateDensitiesKernel = 4;
+        int calculatePressuresKernel = 5;
+        int applyPressureForceKernel = 6;
+        int applyViscosityForceKernel = 7;
+        int integratePositionKernel = 8;
+        int handleCollisionsKernel = 9;
 
         // Private fields
         SimulationManager manager;
@@ -48,6 +48,7 @@ namespace _3D {
 
         public void Init() {
             manager = SimulationManager.Instance;
+            ComputeKernelsIdxs();
             SetBuffers();
             UpdateSettings();
 
@@ -91,6 +92,19 @@ namespace _3D {
 
                 needsUpdate = false;
             }
+        }
+
+        void ComputeKernelsIdxs() {
+            applyExternalForcesKernel = computeShader.FindKernel("ApplyExternalForces");
+            computeSpatialHashesKernel = computeShader.FindKernel("ComputeSpatialHashes");
+            bitonicMergeStepKernel = computeShader.FindKernel("BitonicMergeStep");
+            buildSpatialHashLookupKernel = computeShader.FindKernel("BuildSpatialHashLookup");
+            calculateDensitiesKernel = computeShader.FindKernel("CalculateDensities");
+            calculatePressuresKernel = computeShader.FindKernel("CalculatePressures");
+            applyPressureForceKernel = computeShader.FindKernel("ApplyPressureForce");
+            applyViscosityForceKernel = computeShader.FindKernel("ApplyViscosityForce");
+            integratePositionKernel = computeShader.FindKernel("IntegratePosition");
+            handleCollisionsKernel = computeShader.FindKernel("HandleCollisions");
         }
 
 
