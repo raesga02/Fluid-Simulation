@@ -281,3 +281,11 @@ static const int triangleConnections[256][16] =  {
     {0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 };
+
+int GetNumberOfTriangles(int cubeIndex) {
+    for (int i = 0, counter = 0; i < 15; i += 3) {
+        counter += triangleConnections[cubeIndex][i] != -1;
+    }
+
+    return counter;
+}

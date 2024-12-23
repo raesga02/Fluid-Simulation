@@ -3,7 +3,7 @@
 #pragma kernel MarchCubes
 #pragma kernel PrepareDrawIndirectArgs
 
-#define BLOCK_SIZE_AXIS 8
+#define BLOCK_SIZE_AXIS 4
 
 // Helpers
 #include "MarchingTables.hlsl"
@@ -96,14 +96,6 @@ CubeSample LoadSamples(int3 pos) {
 float3 InterpolateSamples(Sample a, Sample b) {
     float t = (_isoLevel - a.value) / (b.value - a.value);
     return a.position + t * (b.position - a.position);
-}
-
-int GetNumberOfTriangles(int cubeIndex) {
-    for (int i = 0, counter = 0; i < 15; i += 3) {
-        counter += triangleConnections[cubeIndex][i] != -1;
-    }
-
-    return counter;
 }
 
 

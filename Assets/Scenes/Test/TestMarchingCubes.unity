@@ -338,7 +338,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bounds: {x: 40, y: 20, z: 20}
-  samplesPerAxis: {x: 60, y: 20, z: 20}
+  samplesPerAxis: {x: 50, y: 50, z: 50}
   isoLevel: 10
   resetPending: 0
   drawBounds: 1
