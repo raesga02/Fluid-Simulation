@@ -127,11 +127,7 @@ void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
     InterlockedMin(_LookupHashIndices[key].first, candidateFirst);
 }
 
-[numthreads(BLOCK_SIZE, 1, 1)]
-void CalculateDensities(uint3 id : SV_DispatchThreadID) {
-    if (IndexOutOfRange(id.x, _numParticles)) { return; }
-
-    float3 srcPos = _PredictedPositions[id.x];
+float ComputeDensity(float3 srcPos) {
     int3 srcCellPos = GetCellPos(srcPos, _smoothingLength);
     
     float rawKernelAcc = 0.0;
@@ -157,7 +153,15 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
         }
     }
 
-    _Densities[id.x] = _particleMass * rawKernelAcc;
+    return _particleMass * rawKernelAcc;
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void CalculateDensities(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+
+    float3 srcPos = _PredictedPositions[id.x];
+    _Densities[id.x] = ComputeDensity(srcPos);
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
