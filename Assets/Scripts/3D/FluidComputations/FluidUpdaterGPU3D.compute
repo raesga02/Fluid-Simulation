@@ -1,6 +1,7 @@
 // Kernels
 #pragma kernel ApplyExternalForces
 #pragma kernel ComputeSpatialHashes
+#pragma kernel ResetHashLookup
 #pragma kernel BitonicMergeStep
 #pragma kernel BuildSpatialHashLookup
 #pragma kernel CalculateDensities
@@ -16,6 +17,14 @@
 #include "FluidPhysicsHelper3D.hlsl"
 #include "SpatialHashHelper3D.hlsl"
 #include "../FluidColliders/FluidCollisionsHelper.hlsl"
+
+// Structs
+
+struct HashLookup {
+    int size;
+    int first;
+};
+
 
 // Shader properties (Common data)
 float _deltaTime;
@@ -43,7 +52,7 @@ RWStructuredBuffer<float3> _Velocities;
 RWStructuredBuffer<float> _Densities;
 RWStructuredBuffer<float> _Pressures;
 RWStructuredBuffer<int2> _SortedSpatialHashedIndices;
-RWStructuredBuffer<int2> _LookupHashIndices;
+RWStructuredBuffer<HashLookup> _LookupHashIndices;
 
 
 // Helper functions
@@ -79,10 +88,13 @@ void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
     int3 cellPos = GetCellPos(_PredictedPositions[id.x], _smoothingLength);
     int hash = ComputeHash(cellPos);
     _SortedSpatialHashedIndices[id.x] = int2(id.x, hash);
-    
-    // Reset lookupHashIndices (size = 0, first = max int)
-    _LookupHashIndices[id.x] = int2(0, 0x7FFFFFFF);
-    _LookupHashIndices[id.x + _numParticles] = int2(0, 0x7FFFFFFF);
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void ResetHashLookup(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles * 2)) { return; }
+    _LookupHashIndices[id.x].size = 0;
+    _LookupHashIndices[id.x].first = 0x7FFFFFFF;
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
@@ -106,8 +118,8 @@ void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
     int key = GetKey(hash, _numParticles * 2);
     int candidateFirst = id.x;
 
-    InterlockedAdd(_LookupHashIndices[key][0], 1);
-    InterlockedMin(_LookupHashIndices[key][1], candidateFirst);
+    InterlockedAdd(_LookupHashIndices[key].size, 1);
+    InterlockedMin(_LookupHashIndices[key].first, candidateFirst);
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
@@ -122,14 +134,11 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
         int3 nbrCellPos = srcCellPos + neighbourOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
-        int2 lookupData = _LookupHashIndices[nbrKey];
+        HashLookup lookupData = _LookupHashIndices[nbrKey];
 
-        if (lookupData[0] == 0) { continue; } // No particles with that key
-
-        int count = lookupData[0];
-        int first = lookupData[1];
+        if (lookupData.size == 0) { continue; } // No particles with that key
         
-        for (int j = first; j < first + count; j++) {
+        for (int j = lookupData.first; j < lookupData.first + lookupData.size; j++) {
             if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
             
             int nbrIdx = _SortedSpatialHashedIndices[j][0];
@@ -166,14 +175,11 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
         int3 nbrCellPos = srcCellPos + neighbourOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
-        int2 lookupData = _LookupHashIndices[nbrKey];
+        HashLookup lookupData = _LookupHashIndices[nbrKey];
 
-        if (lookupData[0] == 0) { continue; } // No particles with that key
-
-        int count = lookupData[0];
-        int first = lookupData[1];
+        if (lookupData.size == 0) { continue; } // No particles with that key
         
-        for (int j = first; j < first + count; j++) {
+        for (int j = lookupData.first; j < lookupData.first + lookupData.size; j++) {
             if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
 
             int nbrIdx = _SortedSpatialHashedIndices[j][0];
@@ -208,14 +214,11 @@ void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
         int3 nbrCellPos = srcCellPos + neighbourOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
-        int2 lookupData = _LookupHashIndices[nbrKey];
+        HashLookup lookupData = _LookupHashIndices[nbrKey];
 
-        if (lookupData[0] == 0) { continue; } // No particles with that key
-
-        int count = lookupData[0];
-        int first = lookupData[1];
+        if (lookupData.size == 0) { continue; } // No particles with that key
         
-        for (int j = first; j < first + count; j++) {
+        for (int j = lookupData.first; j < lookupData.first + lookupData.size; j++) {
             if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
 
             int nbrIdx = _SortedSpatialHashedIndices[j][0];
