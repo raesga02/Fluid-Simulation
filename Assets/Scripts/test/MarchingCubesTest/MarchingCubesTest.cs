@@ -13,18 +13,20 @@ public class MarchingCubesTest : MonoBehaviour {
 
     [Header("Marching Cubes Settings")]
     [SerializeField] Vector3 bounds;
-    [SerializeField, Range(2, 64)] int samplesPerAxis;
+    [SerializeField] Vector3Int samplesPerAxis;
     [SerializeField] float isoLevel;
     [SerializeField] bool resetPending;
 
     [Header("Display Settings")]
     [SerializeField] bool drawBounds;
     [SerializeField] bool drawSamplePoints;
+    [SerializeField, Range(0.02f, 0.75f)] float sampleScale;
 
     [Header("Array Sizes")]
     [SerializeField, Range(0, 5)] float averageTrianglesPerCube;
     [SerializeField, Range(0f, 1f)] float activeFraction;
     [SerializeField] int numCubes;
+    [SerializeField] int numSamples;
     [SerializeField] int maxNumTriangles;
     [SerializeField] int heuristicNumTriangles;
 
@@ -63,7 +65,8 @@ public class MarchingCubesTest : MonoBehaviour {
     }   
 
     void Init() {
-        numCubes = (samplesPerAxis - 1) * (samplesPerAxis - 1) * (samplesPerAxis - 1);
+        numCubes = (samplesPerAxis.x - 1) * (samplesPerAxis.y - 1) * (samplesPerAxis.z - 1);
+        numSamples = samplesPerAxis.x * samplesPerAxis.y * samplesPerAxis.z;
         maxNumTriangles = 5 * numCubes;
         heuristicNumTriangles = (int)(averageTrianglesPerCube * activeFraction * numCubes);
 
@@ -83,13 +86,13 @@ public class MarchingCubesTest : MonoBehaviour {
     }
 
     void GenerateInitialData() {
-        samplesInitialData = new Sample[samplesPerAxis * samplesPerAxis * samplesPerAxis];
-        Vector3 spacing = bounds / (samplesPerAxis - 1);
+        samplesInitialData = new Sample[numSamples];
+        Vector3 spacing = new Vector3(bounds.x / (samplesPerAxis.x - 1), bounds.y / (samplesPerAxis.y - 1), bounds.z / (samplesPerAxis.z - 1));
         Vector3 origin = transform.position - bounds * 0.5f;
-        for (int z = 0; z < samplesPerAxis; z++) {
-            for (int y = 0; y < samplesPerAxis; y++) {
-                for (int x = 0; x < samplesPerAxis; x++) {
-                    int sampleIdx = x + y * samplesPerAxis + z * samplesPerAxis * samplesPerAxis;
+        for (int z = 0; z < samplesPerAxis.z; z++) {
+            for (int y = 0; y < samplesPerAxis.y; y++) {
+                for (int x = 0; x < samplesPerAxis.x; x++) {
+                    int sampleIdx = x + y * samplesPerAxis.x + z * samplesPerAxis.x * samplesPerAxis.y;
                     Vector3 samplePos = origin + Vector3.Scale(new Vector3Int(x, y, z), spacing);
                     samplesInitialData[sampleIdx] = new Sample() { position = samplePos, value = 0.0f };
                 }
@@ -102,7 +105,7 @@ public class MarchingCubesTest : MonoBehaviour {
     }
 
     void InstantiateComputeBuffers() {
-        samplesBuffer = new ComputeBuffer(samplesPerAxis * samplesPerAxis * samplesPerAxis, Marshal.SizeOf(typeof(Sample)));
+        samplesBuffer = new ComputeBuffer(numSamples, Marshal.SizeOf(typeof(Sample)));
         verticesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxNumTriangles * 3, sizeof(float) * 3);
         normalsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxNumTriangles * 3, sizeof(float) * 3);
         verticesCounterBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.Counter);
@@ -144,14 +147,14 @@ public class MarchingCubesTest : MonoBehaviour {
         UpdateSettings();
 
         // Sample the densities
-        Vector3Int numGroupsSample = GraphicsHelper.ComputeThreadGroups3D(samplesPerAxis, samplesPerAxis, samplesPerAxis, Vector3Int.one * 8);
+        Vector3Int numGroupsSample = GraphicsHelper.ComputeThreadGroups3D(samplesPerAxis.x, samplesPerAxis.y, samplesPerAxis.z, Vector3Int.one * 8);
         computeShader.Dispatch(sampleDensitiesKernel, numGroupsSample.x, numGroupsSample.y, numGroupsSample.z);
 
         // Reset the vertex counter
         computeShader.Dispatch(resetCounterKernel, 1, 1, 1);
 
         // March the cubes
-        Vector3Int numGroupsMarch = GraphicsHelper.ComputeThreadGroups3D(samplesPerAxis - 1, samplesPerAxis - 1, samplesPerAxis - 1, Vector3Int.one * 8);
+        Vector3Int numGroupsMarch = GraphicsHelper.ComputeThreadGroups3D(samplesPerAxis.x - 1, samplesPerAxis.y - 1, samplesPerAxis.z - 1, Vector3Int.one * 8);
         computeShader.Dispatch(marchCubesKernel, numGroupsMarch.x, numGroupsMarch.y, numGroupsMarch.z);
 
         // Draw the mesh
@@ -163,7 +166,7 @@ public class MarchingCubesTest : MonoBehaviour {
         if (!needsUpdate) { return; }
 
         computeShader.SetFloat("_isoLevel", isoLevel);
-        computeShader.SetFloat("_samplesPerAxis", samplesPerAxis);
+        computeShader.SetInts("_samplesPerAxis", samplesPerAxis.x, samplesPerAxis.y, samplesPerAxis.z);
         computeShader.SetInt("_maxNumVertices", maxNumTriangles * 3);
 
         needsUpdate = false;
@@ -175,7 +178,7 @@ public class MarchingCubesTest : MonoBehaviour {
 
     private void OnDrawGizmos() {
         if (drawBounds) { DrawBounds(); }
-        if (drawSamplePoints && samplesPerAxis < 25) { DrawSamplePoints(); }
+        if (drawSamplePoints && numSamples < 15000) { DrawSamplePoints(); }
     }
 
     void DrawBounds() {
@@ -185,13 +188,13 @@ public class MarchingCubesTest : MonoBehaviour {
 
     private void DrawSamplePoints() {
         Gizmos.color = new Color(0.25f, 0.5f, 0.75f, 0.5f);
-        Vector3 spacing = bounds / (samplesPerAxis - 1);
+        Vector3 spacing = new Vector3(bounds.x / (samplesPerAxis.x - 1), bounds.y / (samplesPerAxis.y - 1), bounds.z / (samplesPerAxis.z - 1));
         Vector3 origin = transform.position - bounds * 0.5f;
-        for (int i = 0; i < samplesPerAxis; i++) {
-            for (int j = 0; j < samplesPerAxis; j++) {
-                for (int k = 0; k < samplesPerAxis; k++) {
-                    Vector3 samplePos = origin + Vector3.Scale(new Vector3Int(i, j, k), spacing);
-                    Gizmos.DrawCube(samplePos, Vector3.one * 0.05f);
+        for (int z = 0; z < samplesPerAxis.z; z++) {
+            for (int y = 0; y < samplesPerAxis.y; y++) {
+                for (int x = 0; x < samplesPerAxis.x; x++) {
+                    Vector3 samplePos = origin + Vector3.Scale(new Vector3Int(x, y, z), spacing);
+                    Gizmos.DrawCube(samplePos, Vector3.one * sampleScale);
                 }
             }
         }

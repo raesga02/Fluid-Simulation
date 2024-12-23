@@ -29,7 +29,7 @@ struct IndirectDrawArgs {
 
 // Shader properties (Common data)
 float _isoLevel;
-float _samplesPerAxis;
+int3 _samplesPerAxis;
 int _maxNumVertices;
 
 
@@ -64,7 +64,7 @@ int ComputeCubeIndex(CubeSample cubeSample) {
 
 int IndexFromCoords(int x, int y, int z) {
     // TODO: check performance with z_curve
-    return x + y * _samplesPerAxis + z * _samplesPerAxis * _samplesPerAxis;
+    return x + y * _samplesPerAxis.x + z * _samplesPerAxis.x * _samplesPerAxis.y;
 }
 
 CubeSample LoadSamples(int3 pos) {
@@ -111,7 +111,7 @@ int GetNumberOfTriangles(int cubeIndex) {
 
 [numthreads(BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS)]
 void SampleDensities (uint3 id : SV_DispatchThreadID) {
-    if (IsOutOfRange(id, int3(_samplesPerAxis, _samplesPerAxis, _samplesPerAxis))) { return; }
+    if (IsOutOfRange(id, _samplesPerAxis)) { return; }
     int sampleIdx = IndexFromCoords(id.x, id.y, id.z);
     
     float r2 = dot(_Samples[sampleIdx].position, _Samples[sampleIdx].position);
@@ -125,7 +125,7 @@ void ResetCounter (uint3 id : SV_DispatchThreadID) {
 
 [numthreads(BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS)]
 void MarchCubes (uint3 id : SV_DispatchThreadID) {
-    if (IsOutOfRange(id, int3(_samplesPerAxis - 1, _samplesPerAxis - 1, _samplesPerAxis - 1))) { return; }
+    if (IsOutOfRange(id, _samplesPerAxis - 1)) { return; }
 
     // Compute the configuration
     CubeSample cubeSample = LoadSamples(id);
