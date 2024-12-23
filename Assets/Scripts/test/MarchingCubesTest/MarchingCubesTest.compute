@@ -114,18 +114,8 @@ void SampleDensities (uint3 id : SV_DispatchThreadID) {
     if (IsOutOfRange(id, int3(_samplesPerAxis, _samplesPerAxis, _samplesPerAxis))) { return; }
     int sampleIdx = IndexFromCoords(id.x, id.y, id.z);
     
-    //float r2 = dot(_Samples[sampleIdx].position, _Samples[sampleIdx].position);
-    //_Samples[sampleIdx].value = sqrt(r2);
-
-    float3 samplePos = _Samples[sampleIdx].position;
-    float z_saddle = samplePos.x * samplePos.x - samplePos.y * samplePos.y;
-    float dst = abs(samplePos.z - z_saddle);
-    if (dst <= 0.5) {
-        _Samples[sampleIdx].value = _isoLevel - 10;
-    }
-    else {
-        _Samples[sampleIdx].value = _isoLevel + 10;
-    }
+    float r2 = dot(_Samples[sampleIdx].position, _Samples[sampleIdx].position);
+    _Samples[sampleIdx].value = sqrt(r2);
 }
 
 [numthreads(1, 1, 1)]

@@ -63,6 +63,10 @@ public class MarchingCubesTest : MonoBehaviour {
     }   
 
     void Init() {
+        numCubes = (samplesPerAxis - 1) * (samplesPerAxis - 1) * (samplesPerAxis - 1);
+        maxNumTriangles = 5 * numCubes;
+        heuristicNumTriangles = (int)(averageTrianglesPerCube * activeFraction * numCubes);
+
         UpdateSettings();
         
         GenerateInitialData();
@@ -157,10 +161,6 @@ public class MarchingCubesTest : MonoBehaviour {
 
     void UpdateSettings() {
         if (!needsUpdate) { return; }
-
-        numCubes = (samplesPerAxis - 1) * (samplesPerAxis - 1) * (samplesPerAxis - 1);
-        maxNumTriangles = 5 * numCubes;
-        heuristicNumTriangles = (int)(averageTrianglesPerCube * activeFraction * numCubes);
 
         computeShader.SetFloat("_isoLevel", isoLevel);
         computeShader.SetFloat("_samplesPerAxis", samplesPerAxis);

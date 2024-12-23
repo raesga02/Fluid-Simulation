@@ -337,12 +337,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7618eda9494dbe4d92a6f18815ec207, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bounds: {x: 10, y: 10, z: 10}
-  samplesPerAxis: 50
-  isoLevel: 0
+  bounds: {x: 20, y: 20, z: 20}
+  samplesPerAxis: 40
+  isoLevel: 10
   resetPending: 0
   drawBounds: 1
-  drawSamplePoints: 0
+  drawSamplePoints: 1
   averageTrianglesPerCube: 3.5
   activeFraction: 0.5
   numCubes: 27
