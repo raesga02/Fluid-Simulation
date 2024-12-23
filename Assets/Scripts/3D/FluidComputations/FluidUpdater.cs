@@ -30,16 +30,17 @@ namespace _3D {
         [SerializeField] ComputeShader computeShader;
 
         // Compute kernel IDs
-        const int applyExternalForcesKernel = 0;
-        const int computeSpatialHashesKernel = 1;
-        const int bitonicMergeStepKernel = 2;
-        const int buildSpatialHashLookupKernel = 3;
-        const int calculateDensitiesKernel = 4;
-        const int calculatePressuresKernel = 5;
-        const int applyPressureForceKernel = 6;
-        const int applyViscosityForceKernel = 7;
-        const int integratePositionKernel = 8;
-        const int handleCollisionsKernel = 9;
+        int applyExternalForcesKernel;
+        int computeSpatialHashesKernel;
+        int resetHashLookupKernel;
+        int bitonicMergeStepKernel;
+        int buildSpatialHashLookupKernel;
+        int calculateDensitiesKernel;
+        int calculatePressuresKernel;
+        int applyPressureForceKernel;
+        int applyViscosityForceKernel;
+        int integratePositionKernel;
+        int handleCollisionsKernel;
 
         // Private fields
         SimulationManager manager;
@@ -48,6 +49,7 @@ namespace _3D {
 
         public void Init() {
             manager = SimulationManager.Instance;
+            ComputeKernelsIdxs();
             SetBuffers();
             UpdateSettings();
 
@@ -63,7 +65,7 @@ namespace _3D {
             GraphicsHelper.SetBufferKernels(computeShader, "_Densities", manager.densitiesBuffer, calculateDensitiesKernel, calculatePressuresKernel, applyPressureForceKernel, applyViscosityForceKernel);
             GraphicsHelper.SetBufferKernels(computeShader, "_Pressures", manager.pressuresBuffer, calculatePressuresKernel, applyPressureForceKernel);
             GraphicsHelper.SetBufferKernels(computeShader, "_SortedSpatialHashedIndices", manager.sortedSpatialHashedIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel, bitonicMergeStepKernel, applyPressureForceKernel, applyViscosityForceKernel);
-            GraphicsHelper.SetBufferKernels(computeShader, "_LookupHashIndices", manager.lookupHashIndicesBuffer, calculateDensitiesKernel, computeSpatialHashesKernel, buildSpatialHashLookupKernel, applyPressureForceKernel, applyViscosityForceKernel);
+            GraphicsHelper.SetBufferKernels(computeShader, "_LookupHashIndices", manager.lookupHashIndicesBuffer, calculateDensitiesKernel, resetHashLookupKernel, buildSpatialHashLookupKernel, applyPressureForceKernel, applyViscosityForceKernel);
             GraphicsHelper.SetBufferKernels(computeShader, "_CollidersLookup", manager.collidersLookupsBuffer, handleCollisionsKernel);
             GraphicsHelper.SetBufferKernels(computeShader, "_CollidersVertices", manager.collidersVerticesBuffer, handleCollisionsKernel);
             GraphicsHelper.SetBufferKernels(computeShader, "_CollidersCollisionNormals", manager.collidersCollisionNormalsBuffer, handleCollisionsKernel);
@@ -93,6 +95,20 @@ namespace _3D {
             }
         }
 
+        void ComputeKernelsIdxs() {
+            applyExternalForcesKernel = computeShader.FindKernel("ApplyExternalForces");
+            computeSpatialHashesKernel = computeShader.FindKernel("ComputeSpatialHashes");
+            resetHashLookupKernel = computeShader.FindKernel("ResetHashLookup");
+            bitonicMergeStepKernel = computeShader.FindKernel("BitonicMergeStep");
+            buildSpatialHashLookupKernel = computeShader.FindKernel("BuildSpatialHashLookup");
+            calculateDensitiesKernel = computeShader.FindKernel("CalculateDensities");
+            calculatePressuresKernel = computeShader.FindKernel("CalculatePressures");
+            applyPressureForceKernel = computeShader.FindKernel("ApplyPressureForce");
+            applyViscosityForceKernel = computeShader.FindKernel("ApplyViscosityForce");
+            integratePositionKernel = computeShader.FindKernel("IntegratePosition");
+            handleCollisionsKernel = computeShader.FindKernel("HandleCollisions");
+        }
+
 
         public void UpdateFluidState() {
             int groups = GraphicsHelper.ComputeThreadGroups1D(manager.numParticles, blockSize);
@@ -108,7 +124,9 @@ namespace _3D {
         }
 
         private void PrepareNeighborSearchData(int groups) {
+            int groupsResetHashLookup = GraphicsHelper.ComputeThreadGroups1D(manager.numParticles * 2);
             computeShader.Dispatch(computeSpatialHashesKernel, groups, 1, 1);
+            computeShader.Dispatch(resetHashLookupKernel, groupsResetHashLookup, 1, 1);
             SortParticleIndicesByKey();
             computeShader.Dispatch(buildSpatialHashLookupKernel, groups, 1, 1);
         }
