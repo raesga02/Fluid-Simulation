@@ -20,6 +20,11 @@
 
 // Structs
 
+struct HashedIndex {
+    int idx;
+    int hash;
+};
+
 struct HashLookup {
     int size;
     int first;
@@ -51,7 +56,7 @@ RWStructuredBuffer<float3> _PredictedPositions;
 RWStructuredBuffer<float3> _Velocities;
 RWStructuredBuffer<float> _Densities;
 RWStructuredBuffer<float> _Pressures;
-RWStructuredBuffer<int2> _SortedSpatialHashedIndices;
+RWStructuredBuffer<HashedIndex> _SortedSpatialHashedIndices;
 RWStructuredBuffer<HashLookup> _LookupHashIndices;
 
 
@@ -62,11 +67,11 @@ bool IndexOutOfRange(int particleIndex, int max) {
 }
 
 int Compare(int i, int j) {
-    return CompareKeyFromHash(_SortedSpatialHashedIndices[i][1], _SortedSpatialHashedIndices[j][1], _numParticles * 2);
+    return CompareKeyFromHash(_SortedSpatialHashedIndices[i].hash, _SortedSpatialHashedIndices[j].hash, _numParticles * 2);
 }
 
 void Exchange(int i, int j) {
-    int2 tmp = _SortedSpatialHashedIndices[i];
+    HashedIndex tmp = _SortedSpatialHashedIndices[i];
     _SortedSpatialHashedIndices[i] = _SortedSpatialHashedIndices[j];
     _SortedSpatialHashedIndices[j] = tmp;
 }
@@ -87,14 +92,15 @@ void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
     
     int3 cellPos = GetCellPos(_PredictedPositions[id.x], _smoothingLength);
     int hash = ComputeHash(cellPos);
-    _SortedSpatialHashedIndices[id.x] = int2(id.x, hash);
+    HashedIndex hashedIndex = { id.x, hash };
+    _SortedSpatialHashedIndices[id.x] = hashedIndex;
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void ResetHashLookup(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles * 2)) { return; }
-    _LookupHashIndices[id.x].size = 0;
-    _LookupHashIndices[id.x].first = 0x7FFFFFFF;
+    HashLookup lookup = { 0, 0x7FFFFFFF };
+    _LookupHashIndices[id.x] = lookup;
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
@@ -114,8 +120,7 @@ void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
 void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
-    int hash = _SortedSpatialHashedIndices[id.x][1];
-    int key = GetKey(hash, _numParticles * 2);
+    int key = GetKey(_SortedSpatialHashedIndices[id.x].hash, _numParticles * 2);
     int candidateFirst = id.x;
 
     InterlockedAdd(_LookupHashIndices[key].size, 1);
@@ -139,9 +144,9 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
         if (lookupData.size == 0) { continue; } // No particles with that key
         
         for (int j = lookupData.first; j < lookupData.first + lookupData.size; j++) {
-            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+            if (nbrHash != _SortedSpatialHashedIndices[j].hash) { continue; } // Avoiding key collisions
             
-            int nbrIdx = _SortedSpatialHashedIndices[j][0];
+            int nbrIdx = _SortedSpatialHashedIndices[j].idx;
             float3 r = _PredictedPositions[nbrIdx] - srcPos;
             float r2 = dot(r, r);
 
@@ -180,9 +185,9 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
         if (lookupData.size == 0) { continue; } // No particles with that key
         
         for (int j = lookupData.first; j < lookupData.first + lookupData.size; j++) {
-            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+            if (nbrHash != _SortedSpatialHashedIndices[j].hash) { continue; } // Avoiding key collisions
 
-            int nbrIdx = _SortedSpatialHashedIndices[j][0];
+            int nbrIdx = _SortedSpatialHashedIndices[j].idx;
             float3 r = _PredictedPositions[nbrIdx] - srcPos;
             float r2 = dot(r, r);
             
@@ -219,9 +224,9 @@ void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
         if (lookupData.size == 0) { continue; } // No particles with that key
         
         for (int j = lookupData.first; j < lookupData.first + lookupData.size; j++) {
-            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+            if (nbrHash != _SortedSpatialHashedIndices[j].hash) { continue; } // Avoiding key collisions
 
-            int nbrIdx = _SortedSpatialHashedIndices[j][0];
+            int nbrIdx = _SortedSpatialHashedIndices[j].idx;
             float3 r = _PredictedPositions[nbrIdx] - srcPos;
             float r2 = dot(r, r);
             
