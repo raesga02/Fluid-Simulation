@@ -31,12 +31,12 @@ namespace _3D {
         [SerializeField] int numSamples;
         [SerializeField] int maxNumTriangles;
         [SerializeField] int heuristicNumTriangles;
+        [SerializeField] int selectedNumTriangles;
 
         [Header("References")]
         [SerializeField] ComputeShader samplerShader;
         [SerializeField] ComputeShader marchingCubesShader;
         [SerializeField] Material material;
-        [SerializeField] Light sceneLight;
 
         // Compute buffers
         public ComputeBuffer samplesBuffer { get; private set; }
@@ -68,7 +68,8 @@ namespace _3D {
             numCubes = (samplesPerAxis.x - 1) * (samplesPerAxis.y - 1) * (samplesPerAxis.z - 1);
             numSamples = samplesPerAxis.x * samplesPerAxis.y * samplesPerAxis.z;
             maxNumTriangles = 5 * numCubes;
-            heuristicNumTriangles = (int)(averageTrianglesPerCube * activeFraction * numCubes);
+            heuristicNumTriangles = (int)(averageTrianglesPerCube * activeFraction * numCubes * 1.5f);
+            selectedNumTriangles = heuristicNumTriangles;
 
             ComputeKernelsIdxs();
             UpdateSettings();
@@ -106,16 +107,16 @@ namespace _3D {
                     }
                 }
             }
-            verticesInitialData = Enumerable.Repeat(Vector3.zero, maxNumTriangles * 3).ToArray();
-            normalsInitialData = Enumerable.Repeat(Vector3.one, maxNumTriangles * 3).ToArray();
+            verticesInitialData = Enumerable.Repeat(Vector3.zero, selectedNumTriangles * 3).ToArray();
+            normalsInitialData = Enumerable.Repeat(Vector3.one, selectedNumTriangles * 3).ToArray();
             verticesCounterInitialData = new uint[1] { 0 };
-            commandBufInitialData = Enumerable.Repeat( new GraphicsBuffer.IndirectDrawArgs() { instanceCount = 1, startInstance = 0, startVertex = 0, vertexCountPerInstance = (uint)maxNumTriangles * 3}, 1).ToArray();
+            commandBufInitialData = Enumerable.Repeat( new GraphicsBuffer.IndirectDrawArgs() { instanceCount = 1, startInstance = 0, startVertex = 0, vertexCountPerInstance = (uint)selectedNumTriangles * 3}, 1).ToArray();
         }
 
         void InstantiateComputeBuffers() {
             samplesBuffer = new ComputeBuffer(numSamples, Marshal.SizeOf(typeof(Sample)));
-            verticesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxNumTriangles * 3, sizeof(float) * 3);
-            normalsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxNumTriangles * 3, sizeof(float) * 3);
+            verticesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, selectedNumTriangles * 3, sizeof(float) * 3);
+            normalsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, selectedNumTriangles * 3, sizeof(float) * 3);
             verticesCounterBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.Counter);
             commandBuf = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawArgs.size);
         }
@@ -182,7 +183,7 @@ namespace _3D {
 
             marchingCubesShader.SetFloat("_isoLevel", isoLevel);
             marchingCubesShader.SetInts("_samplesPerAxis", samplesPerAxis.x, samplesPerAxis.y, samplesPerAxis.z);
-            marchingCubesShader.SetInt("_maxNumVertices", maxNumTriangles * 3);
+            marchingCubesShader.SetInt("_maxNumVertices", selectedNumTriangles * 3);
 
             samplerShader.SetFloat("_isoLevel", isoLevel);
             samplerShader.SetInts("_samplesPerAxis", samplesPerAxis.x, samplesPerAxis.y, samplesPerAxis.z);

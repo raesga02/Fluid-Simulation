@@ -213,7 +213,7 @@ MonoBehaviour:
   particleMaterial: {fileID: 2100000, guid: 5ff781fcf7a6d2446b90828573a2c396, type: 2}
   sceneLight: {fileID: 1693682259}
   marchingCubesDisplay: {fileID: 1855825788}
-  drawParticles: 1
+  drawParticles: 0
 --- !u!114 &734064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -535,7 +535,7 @@ Mesh:
     offset: 0
     size: 0
     path: 
---- !u!43 &231491760
+--- !u!43 &282596220
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -700,7 +700,7 @@ Mesh:
     offset: 0
     size: 0
     path: 
---- !u!43 &282596220
+--- !u!43 &396092653
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1220,8 +1220,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 505071070}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.067054525, y: -0.9290197, z: 0.29808336, w: -0.20874013}
-  m_LocalPosition: {x: -21.907166, y: -5.2068005, z: 37.253677}
+  m_LocalRotation: {x: -0.0021969415, y: -0.9785922, z: 0.2055105, w: -0.0108576715}
+  m_LocalPosition: {x: -0.9397926, y: 24.343113, z: 80.510216}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1406,60 +1406,7 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6526097483158878292, guid: 918c820f06fd2f64994afd0ea2d0f4b7, type: 3}
   m_PrefabInstance: {fileID: 659726646}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &748856564
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 748856565}
-  - component: {fileID: 748856566}
-  m_Layer: 0
-  m_Name: Spawners
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &748856565
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 748856564}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 497705710}
-  - {fileID: 1377156832}
-  - {fileID: 1963224759}
-  m_Father: {fileID: 734062}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &748856566
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 748856564}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00500a5347a8c014e98064a1e1401513, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  numParticles: 60000
-  debugUpdateSpawners: 0
-  spawners:
-  - {fileID: 497705711}
-  - {fileID: 1377156833}
-  - {fileID: 1963224760}
---- !u!43 &934768359
+--- !u!43 &708345069
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1624,6 +1571,59 @@ Mesh:
     offset: 0
     size: 0
     path: 
+--- !u!1 &748856564
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 748856565}
+  - component: {fileID: 748856566}
+  m_Layer: 0
+  m_Name: Spawners
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &748856565
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 748856564}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 497705710}
+  - {fileID: 1377156832}
+  - {fileID: 1963224759}
+  m_Father: {fileID: 734062}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &748856566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 748856564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00500a5347a8c014e98064a1e1401513, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numParticles: 60000
+  debugUpdateSpawners: 0
+  spawners:
+  - {fileID: 497705711}
+  - {fileID: 1377156833}
+  - {fileID: 1963224760}
 --- !u!1001 &1024392583
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2109,7 +2109,12 @@ MonoBehaviour:
   colliders:
   - {fileID: 111332212}
   - {fileID: 0}
---- !u!43 &1508927190
+--- !u!4 &1616124887 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6526097483158878292, guid: 918c820f06fd2f64994afd0ea2d0f4b7, type: 3}
+  m_PrefabInstance: {fileID: 2967771613892229726}
+  m_PrefabAsset: {fileID: 0}
+--- !u!43 &1681762565
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2274,11 +2279,6 @@ Mesh:
     offset: 0
     size: 0
     path: 
---- !u!4 &1616124887 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6526097483158878292, guid: 918c820f06fd2f64994afd0ea2d0f4b7, type: 3}
-  m_PrefabInstance: {fileID: 2967771613892229726}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1693682258
 GameObject:
   m_ObjectHideFlags: 0
@@ -2417,27 +2417,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f0d5b5d8915ad44b984cc7789e6785d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bounds: {x: 105, y: 70, z: 65}
-  samplesPerAxis: {x: 50, y: 25, z: 25}
-  isoLevel: 10
+  bounds: {x: 101, y: 66, z: 61}
+  samplesPerAxis: {x: 202, y: 132, z: 122}
+  isoLevel: 5
   resetPending: 0
   drawBounds: 1
-  drawSamplePoints: 1
+  drawSamplePoints: 0
   sampleScale: 0.119
   averageTrianglesPerCube: 3
-  activeFraction: 0.8
+  activeFraction: 0.3
   numCubes: 0
   numSamples: 0
   maxNumTriangles: 0
   heuristicNumTriangles: 0
+  selectedNumTriangles: 0
   samplerShader: {fileID: 7200000, guid: 2d26ec851caa3d94cb661d7ea762ec31, type: 3}
   marchingCubesShader: {fileID: 7200000, guid: 363d4de3521ebd0429c93f60c30d3942, type: 3}
   material: {fileID: 2100000, guid: 23c2142115cd13d4e9ccc235b5d5620f, type: 2}
-  sceneLight: {fileID: 1693682259}
   verticesInitialData: []
   normalsInitialData: []
   verticesCounterInitialData: 
---- !u!43 &1884587928
+--- !u!43 &1962487015
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2618,7 +2618,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 04bcf3145656a244fb2874b7696a2550, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!43 &2072001682
+--- !u!43 &2014419386
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
