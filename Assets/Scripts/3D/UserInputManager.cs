@@ -6,7 +6,7 @@ namespace _3D {
     public class UserInputManager : MonoBehaviour {
 
         [Header("Immersive Mode Controls")]
-        [SerializeField] bool immersiveModeOn = false;
+        [SerializeField] bool immersiveModeOn = true;
 
         [Header("Movement Control")]
         [SerializeField] Vector3 targetPosition;
@@ -15,7 +15,7 @@ namespace _3D {
         [Header("Rotation Control")]
         [SerializeField] float mouseSensitivity = 100f;
         [SerializeField] float xRotation = 0f;
-        [SerializeField] float yRotation = 0f;
+        [SerializeField] float yRotation = 180f;
 
         [Header("Speed Control")]
         [SerializeField] float defaultSpeedFactor = 1f;
@@ -33,11 +33,12 @@ namespace _3D {
             mainCamera = Camera.main;
             targetPosition = mainCamera.transform.localPosition;
             manager.simulationSpeedFactor = defaultSpeedFactor;
+
+            xRotation = mainCamera.transform.localRotation.eulerAngles.x;
+            yRotation = mainCamera.transform.localRotation.eulerAngles.y;
         }
 
         private void Update() {
-            UpdateImmersionState();
-
             if (immersiveModeOn) {
                 CheckMovement();
                 CheckRotation();
@@ -46,6 +47,7 @@ namespace _3D {
                 CheckSpeed();
             }
 
+            UpdateImmersionState();
         }
 
         void UpdateImmersionState() {

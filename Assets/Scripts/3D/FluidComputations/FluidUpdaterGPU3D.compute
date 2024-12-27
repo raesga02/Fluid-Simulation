@@ -1,6 +1,7 @@
 // Kernels
 #pragma kernel ApplyExternalForces
 #pragma kernel ComputeSpatialHashes
+#pragma kernel ResetHashLookup
 #pragma kernel BitonicMergeStep
 #pragma kernel BuildSpatialHashLookup
 #pragma kernel CalculateDensities
@@ -9,6 +10,7 @@
 #pragma kernel ApplyViscosityForce
 #pragma kernel IntegratePosition
 #pragma kernel HandleCollisions
+#pragma kernel SampleDensities
 
 #define BLOCK_SIZE 64
 
@@ -16,6 +18,20 @@
 #include "FluidPhysicsHelper3D.hlsl"
 #include "SpatialHashHelper3D.hlsl"
 #include "../FluidColliders/FluidCollisionsHelper.hlsl"
+#include "../FluidRendering/MarchingCubes/MarchingCubesShared.hlsl"
+
+// Structs
+
+struct HashedIndex {
+    int idx;
+    int hash;
+};
+
+struct HashLookup {
+    int size;
+    int first;
+};
+
 
 // Shader properties (Common data)
 float _deltaTime;
@@ -42,8 +58,8 @@ RWStructuredBuffer<float3> _PredictedPositions;
 RWStructuredBuffer<float3> _Velocities;
 RWStructuredBuffer<float> _Densities;
 RWStructuredBuffer<float> _Pressures;
-RWStructuredBuffer<int2> _SortedSpatialHashedIndices;
-RWStructuredBuffer<int2> _LookupHashIndices;
+RWStructuredBuffer<HashedIndex> _SortedSpatialHashedIndices;
+RWStructuredBuffer<HashLookup> _LookupHashIndices;
 
 
 // Helper functions
@@ -53,11 +69,11 @@ bool IndexOutOfRange(int particleIndex, int max) {
 }
 
 int Compare(int i, int j) {
-    return CompareKeyFromHash(_SortedSpatialHashedIndices[i][1], _SortedSpatialHashedIndices[j][1], _numParticles * 2);
+    return CompareKeyFromHash(_SortedSpatialHashedIndices[i].hash, _SortedSpatialHashedIndices[j].hash, _numParticles * 2);
 }
 
 void Exchange(int i, int j) {
-    int2 tmp = _SortedSpatialHashedIndices[i];
+    HashedIndex tmp = _SortedSpatialHashedIndices[i];
     _SortedSpatialHashedIndices[i] = _SortedSpatialHashedIndices[j];
     _SortedSpatialHashedIndices[j] = tmp;
 }
@@ -78,11 +94,15 @@ void ComputeSpatialHashes(uint3 id : SV_DispatchThreadID) {
     
     int3 cellPos = GetCellPos(_PredictedPositions[id.x], _smoothingLength);
     int hash = ComputeHash(cellPos);
-    _SortedSpatialHashedIndices[id.x] = int2(id.x, hash);
-    
-    // Reset lookupHashIndices (size = 0, first = max int)
-    _LookupHashIndices[id.x] = int2(0, 0x7FFFFFFF);
-    _LookupHashIndices[id.x + _numParticles] = int2(0, 0x7FFFFFFF);
+    HashedIndex hashedIndex = { id.x, hash };
+    _SortedSpatialHashedIndices[id.x] = hashedIndex;
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void ResetHashLookup(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles * 2)) { return; }
+    HashLookup lookup = { 0, 0x7FFFFFFF };
+    _LookupHashIndices[id.x] = lookup;
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
@@ -102,19 +122,14 @@ void BitonicMergeStep(uint3 id : SV_DispatchThreadID) {
 void BuildSpatialHashLookup(uint3 id : SV_DispatchThreadID) {
     if (IndexOutOfRange(id.x, _numParticles)) { return; }
 
-    int hash = _SortedSpatialHashedIndices[id.x][1];
-    int key = GetKey(hash, _numParticles * 2);
+    int key = GetKey(_SortedSpatialHashedIndices[id.x].hash, _numParticles * 2);
     int candidateFirst = id.x;
 
-    InterlockedAdd(_LookupHashIndices[key][0], 1);
-    InterlockedMin(_LookupHashIndices[key][1], candidateFirst);
+    InterlockedAdd(_LookupHashIndices[key].size, 1);
+    InterlockedMin(_LookupHashIndices[key].first, candidateFirst);
 }
 
-[numthreads(BLOCK_SIZE, 1, 1)]
-void CalculateDensities(uint3 id : SV_DispatchThreadID) {
-    if (IndexOutOfRange(id.x, _numParticles)) { return; }
-
-    float3 srcPos = _PredictedPositions[id.x];
+float ComputeDensity(float3 srcPos) {
     int3 srcCellPos = GetCellPos(srcPos, _smoothingLength);
     
     float rawKernelAcc = 0.0;
@@ -122,17 +137,14 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
         int3 nbrCellPos = srcCellPos + neighbourOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
-        int2 lookupData = _LookupHashIndices[nbrKey];
+        HashLookup lookupData = _LookupHashIndices[nbrKey];
 
-        if (lookupData[0] == 0) { continue; } // No particles with that key
-
-        int count = lookupData[0];
-        int first = lookupData[1];
+        if (lookupData.size == 0) { continue; } // No particles with that key
         
-        for (int j = first; j < first + count; j++) {
-            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+        for (int j = lookupData.first; j < lookupData.first + lookupData.size; j++) {
+            if (nbrHash != _SortedSpatialHashedIndices[j].hash) { continue; } // Avoiding key collisions
             
-            int nbrIdx = _SortedSpatialHashedIndices[j][0];
+            int nbrIdx = _SortedSpatialHashedIndices[j].idx;
             float3 r = _PredictedPositions[nbrIdx] - srcPos;
             float r2 = dot(r, r);
 
@@ -143,7 +155,15 @@ void CalculateDensities(uint3 id : SV_DispatchThreadID) {
         }
     }
 
-    _Densities[id.x] = _particleMass * rawKernelAcc;
+    return _particleMass * rawKernelAcc;
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void CalculateDensities(uint3 id : SV_DispatchThreadID) {
+    if (IndexOutOfRange(id.x, _numParticles)) { return; }
+
+    float3 srcPos = _PredictedPositions[id.x];
+    _Densities[id.x] = ComputeDensity(srcPos);
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
@@ -166,17 +186,14 @@ void ApplyPressureForce(uint3 id : SV_DispatchThreadID) {
         int3 nbrCellPos = srcCellPos + neighbourOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
-        int2 lookupData = _LookupHashIndices[nbrKey];
+        HashLookup lookupData = _LookupHashIndices[nbrKey];
 
-        if (lookupData[0] == 0) { continue; } // No particles with that key
-
-        int count = lookupData[0];
-        int first = lookupData[1];
+        if (lookupData.size == 0) { continue; } // No particles with that key
         
-        for (int j = first; j < first + count; j++) {
-            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+        for (int j = lookupData.first; j < lookupData.first + lookupData.size; j++) {
+            if (nbrHash != _SortedSpatialHashedIndices[j].hash) { continue; } // Avoiding key collisions
 
-            int nbrIdx = _SortedSpatialHashedIndices[j][0];
+            int nbrIdx = _SortedSpatialHashedIndices[j].idx;
             float3 r = _PredictedPositions[nbrIdx] - srcPos;
             float r2 = dot(r, r);
             
@@ -208,17 +225,14 @@ void ApplyViscosityForce(uint3 id : SV_DispatchThreadID) {
         int3 nbrCellPos = srcCellPos + neighbourOffsets[i];
         int nbrHash = ComputeHash(nbrCellPos);
         int nbrKey = GetKey(nbrHash, _numParticles * 2);
-        int2 lookupData = _LookupHashIndices[nbrKey];
+        HashLookup lookupData = _LookupHashIndices[nbrKey];
 
-        if (lookupData[0] == 0) { continue; } // No particles with that key
-
-        int count = lookupData[0];
-        int first = lookupData[1];
+        if (lookupData.size == 0) { continue; } // No particles with that key
         
-        for (int j = first; j < first + count; j++) {
-            if (nbrHash != _SortedSpatialHashedIndices[j][1]) { continue; } // Avoiding key collisions
+        for (int j = lookupData.first; j < lookupData.first + lookupData.size; j++) {
+            if (nbrHash != _SortedSpatialHashedIndices[j].hash) { continue; } // Avoiding key collisions
 
-            int nbrIdx = _SortedSpatialHashedIndices[j][0];
+            int nbrIdx = _SortedSpatialHashedIndices[j].idx;
             float3 r = _PredictedPositions[nbrIdx] - srcPos;
             float r2 = dot(r, r);
             
@@ -262,4 +276,12 @@ void HandleCollisions(uint3 id : SV_DispatchThreadID) {
             _Velocities[id.x] += response.displacement * GetVelocityAdjustment(_Velocities[id.x], _gravity);
         }
     }  
+}
+
+[numthreads(BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS)]
+void SampleDensities (uint3 id : SV_DispatchThreadID) {
+    if (IsVectorOutOfRange(id, _samplesPerAxis)) { return; }
+    
+    int sampleIdx = IndexFromCoords(id.x, id.y, id.z);
+    _Samples[sampleIdx].value = ComputeDensity(_Samples[sampleIdx].position);
 }
