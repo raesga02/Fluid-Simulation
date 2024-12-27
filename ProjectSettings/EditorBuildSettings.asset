@@ -4,5 +4,11 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 0
+    path: Assets/Scenes/Test/TestMarchingCubes.unity
+    guid: 7c6a3e6212b6d7e4db271729833be661
+  - enabled: 1
+    path: Assets/Scenes/Simulation3D.unity
+    guid: 780af9142341cff44932dcdd85dff0f6
   m_configObjects: {}

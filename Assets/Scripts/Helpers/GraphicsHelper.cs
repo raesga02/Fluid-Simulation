@@ -33,7 +33,21 @@ public static class GraphicsHelper {
         }
     }
 
+    public static void SetBufferKernels(ComputeShader computeShader, string name, GraphicsBuffer buffer, params int[] kernelIndices) {
+        for (int i = 0; i < kernelIndices.Length; i++) {
+            computeShader.SetBuffer(kernelIndices[i], name, buffer);
+        }
+    }
+
     public static int ComputeThreadGroups1D(int numIterations, int blockSize = 64) {
         return Mathf.CeilToInt(numIterations / (float)blockSize);
+    }
+
+    public static Vector3Int ComputeThreadGroups3D(int numIterationsX, int numIterationsY, int numIterationsZ, Vector3Int blockSize) {
+        return new Vector3Int(
+            Mathf.CeilToInt(numIterationsX / (float)blockSize.x),
+            Mathf.CeilToInt(numIterationsY / (float)blockSize.y),
+            Mathf.CeilToInt(numIterationsZ / (float)blockSize.z)
+        );
     }
 }
