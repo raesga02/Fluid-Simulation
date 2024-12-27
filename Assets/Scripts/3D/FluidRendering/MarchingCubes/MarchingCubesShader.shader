@@ -1,6 +1,6 @@
 Shader "Custom/MarchShader" {
     Properties {
-        //_LightDirection ("Light Direction", Vector) = (0, 0, -1)
+        _BaseColor ("Base Color", Color) = (0.1, 0.3, 1, 1)
     }
     SubShader {
         Tags { 
@@ -23,13 +23,12 @@ Shader "Custom/MarchShader" {
             };
 
             // Shader properties (Common data)
-            //float3 _LightDirection;
+            float4 _BaseColor;
 
             // Structured Buffers (Per instance data)
             StructuredBuffer<float3> _Vertices;
             StructuredBuffer<float3> _Normals;
             StructuredBuffer<int> _Triangles;
-
 
 
             Interpolators vert (uint svVertexID: SV_VertexID, uint svInstanceID : SV_InstanceID) {
@@ -47,10 +46,9 @@ Shader "Custom/MarchShader" {
             }
 
             float4 frag (Interpolators i) : SV_Target {
-                return float4(i.normal, 1.0);
                 float3 lightDir = _WorldSpaceLightPos0;
                 float shading = dot(lightDir, normalize(i.normal)) * 0.5 + 0.5;
-                return float4(1, 1, 1, 1) * shading;
+                return _BaseColor * shading;
             }
 
             ENDCG

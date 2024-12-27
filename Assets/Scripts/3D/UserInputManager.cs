@@ -6,7 +6,7 @@ namespace _3D {
     public class UserInputManager : MonoBehaviour {
 
         [Header("Immersive Mode Controls")]
-        [SerializeField] bool immersiveModeOn = false;
+        [SerializeField] bool immersiveModeOn = true;
 
         [Header("Movement Control")]
         [SerializeField] Vector3 targetPosition;
