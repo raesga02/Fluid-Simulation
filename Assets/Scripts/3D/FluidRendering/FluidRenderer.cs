@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace _3D {
@@ -26,7 +27,10 @@ namespace _3D {
         [SerializeField] Mesh particleMesh;
         [SerializeField] Material particleMaterial;
         [SerializeField] Light sceneLight;
+        [SerializeField] MarchingCubesDisplay marchingCubesDisplay;
         
+        public bool drawParticles = true;
+
         // Private fields
         SimulationManager manager;
         ComputeBuffer argsBuffer;
@@ -38,6 +42,11 @@ namespace _3D {
             manager = SimulationManager.Instance;
             SetBuffers();
             UpdateSettings();
+            InitializeMarchingCubes();
+        }
+
+        private void InitializeMarchingCubes() {
+            marchingCubesDisplay.Init();
         }
 
         void SetBuffers() {
@@ -73,6 +82,7 @@ namespace _3D {
         }
 
         void RenderIndirect() {
+            if (!drawParticles) { return;}
             Graphics.DrawMeshInstancedIndirect(particleMesh, 0, particleMaterial, bounds, argsBuffer);
         }
 

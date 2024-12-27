@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: FluidParticle3D
-  m_Shader: {fileID: 4800000, guid: 7a2377cf5bceca04e81b56b8f97600dd, type: 3}
+  m_Name: MarchingMaterial
+  m_Shader: {fileID: 4800000, guid: 2807badd4b0dafe418a2d3a85d49dd40, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -24,10 +24,6 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BumpMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _ColorGradientTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -63,34 +59,28 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    m_Ints:
-    - _ColoringMode: 1
+    m_Ints: []
     m_Floats:
-    - _BlendFactor: 0
     - _BumpScale: 1
-    - _ColoringMode: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
-    - _DisplaySize: 0.25
+    - _DisplaySize: 1
     - _DstBlend: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _MaxDisplayVelocity: 15
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _ScaleFactor: 0.35
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
-    - _Color: {r: 0.19691172, g: 0.3532211, b: 0.7075472, a: 0}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FlatParticleColor: {r: 0.10679956, g: 0.6383551, b: 0.9056604, a: 0}
-    - _LightColor: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-    - _LightDirection: {r: 0.3213938, g: 0.76604444, b: -0.5566705, a: 0}
+    - _LightDirection: {r: 0, g: 0, b: -1, a: 1}
+    - _ParticlePosition: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []

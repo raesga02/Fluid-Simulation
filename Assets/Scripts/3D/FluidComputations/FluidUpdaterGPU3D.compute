@@ -10,6 +10,7 @@
 #pragma kernel ApplyViscosityForce
 #pragma kernel IntegratePosition
 #pragma kernel HandleCollisions
+#pragma kernel SampleDensities
 
 #define BLOCK_SIZE 64
 
@@ -17,6 +18,7 @@
 #include "FluidPhysicsHelper3D.hlsl"
 #include "SpatialHashHelper3D.hlsl"
 #include "../FluidColliders/FluidCollisionsHelper.hlsl"
+#include "../FluidRendering/MarchingCubes/MarchingCubesShared.hlsl"
 
 // Structs
 
@@ -274,4 +276,12 @@ void HandleCollisions(uint3 id : SV_DispatchThreadID) {
             _Velocities[id.x] += response.displacement * GetVelocityAdjustment(_Velocities[id.x], _gravity);
         }
     }  
+}
+
+[numthreads(BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS, BLOCK_SIZE_AXIS)]
+void SampleDensities (uint3 id : SV_DispatchThreadID) {
+    if (IsVectorOutOfRange(id, _samplesPerAxis)) { return; }
+    
+    int sampleIdx = IndexFromCoords(id.x, id.y, id.z);
+    _Samples[sampleIdx].value = ComputeDensity(_Samples[sampleIdx].position);
 }
