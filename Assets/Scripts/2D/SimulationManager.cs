@@ -18,6 +18,11 @@ namespace _2D {
         [Header("Time Settings")]
         [Range(0.0001f, 1 / 50f)] public float deltaTime;
 
+        [Header("Simulation Control Settings")]
+        public float simulationSpeedFactor = 1f;
+        public bool isPaused = false;
+        public bool pendingReset = false;
+
         [Header("References")]
         [SerializeField] FluidSpawnerManager fluidSpawner;
         [SerializeField] FluidColliderManager fluidColliderManager;
@@ -55,6 +60,16 @@ namespace _2D {
         }
 
         void Start() {
+            Init();
+        }
+
+        void ResetSimulation() {
+            ReleaseBuffers();
+            Init();
+            pendingReset = false;
+        }
+
+        private void Init() {
             fluidInitialData = fluidSpawner.SpawnFluid();
             (collidersLookups, collidersVertices, collidersNormals) = fluidColliderManager.GetColliderData();
             numParticles = fluidInitialData.positions.Length;
@@ -97,15 +112,38 @@ namespace _2D {
             collidersNormalsBuffer.SetData(collidersNormals);
         }
 
+        void ReleaseBuffers() {
+            positionsBuffer?.Release();
+            predictedPosBuffer?.Release();
+            velocitiesBuffer?.Release();
+            densitiesBuffer?.Release();
+            pressuresBuffer?.Release();
+
+            sortedSpatialHashedIndicesBuffer?.Release();
+            lookupHashIndicesBuffer?.Release();
+
+            collidersLookupsBuffer?.Release();
+            collidersVerticesBuffer?.Release();
+            collidersNormalsBuffer?.Release();
+        }
+
         void FixedUpdate() {
-            StepSimulation();
+            if (!isPaused) {
+                StepSimulation();
+            }
         }
 
         void StepSimulation() {
             fluidUpdater.UpdateFluidState();
         }
 
+        public void RequestSettingsUpdate() {
+            fluidUpdater.needsUpdate = true;
+        }
+
         void Update() {
+            if (pendingReset) { ResetSimulation(); }
+
             fluidRenderer.RenderFluid();
         }
 
@@ -115,18 +153,7 @@ namespace _2D {
         }
 
         void OnDestroy() {
-            positionsBuffer.Release();
-            predictedPosBuffer.Release();
-            velocitiesBuffer.Release();
-            densitiesBuffer.Release();
-            pressuresBuffer.Release();
-
-            sortedSpatialHashedIndicesBuffer.Release();
-            lookupHashIndicesBuffer.Release();
-
-            collidersLookupsBuffer.Release();
-            collidersVerticesBuffer.Release();
-            collidersNormalsBuffer.Release();
+            ReleaseBuffers();
         }
     }
     

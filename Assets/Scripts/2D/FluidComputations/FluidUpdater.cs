@@ -43,7 +43,7 @@ namespace _2D {
 
         // Private fields
         SimulationManager manager;
-        bool needsUpdate = true;
+        [HideInInspector] public bool needsUpdate = true;
 
 
         public void Init() {
@@ -72,7 +72,7 @@ namespace _2D {
         void UpdateSettings() {
             if (needsUpdate) {
                 Time.fixedDeltaTime = manager.deltaTime;
-                computeShader.SetFloat("_deltaTime", manager.deltaTime);
+                computeShader.SetFloat("_deltaTime", manager.deltaTime * manager.simulationSpeedFactor);
                 computeShader.SetInt("_numParticles", manager.numParticles);
                 computeShader.SetInt("_paddedNumParticles", manager.paddedNumParticles);
                 computeShader.SetInt("_numColliders", manager.numColliders);
