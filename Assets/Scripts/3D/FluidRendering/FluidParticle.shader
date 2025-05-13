@@ -5,9 +5,12 @@ Shader "Custom/FluidParticle3D"{
         _UseLambertIllumination("Use Lambert Illumination", Integer) = 0
         _FlatParticleColor ("Flat Particle Color", Color) = (0.1, 0.3, 1, 1)
         _MaxDisplayVelocity ("Max Display Velocity", Float) = 20.0
+        _DensityDeviationRange ("Density Deviation Range", Float) = 20.0
         _ColorGradientTex ("Color Gradient Texture", 2D) = "white" {}
+        _DensityColorGradientTex ("Density Color Gradient Texture", 2D) = "white" {}
         _LightColor ("Light Color", Color) = (1, 1, 1, 1)
         _LightDirection ("Light Direction", Vector) = (0, -1, 0)
+        _RestDensity ("Rest Density", Float) = 10.0
     }
     SubShader {
         Tags { 
@@ -28,7 +31,9 @@ Shader "Custom/FluidParticle3D"{
             int _UseLambertIllumination;
             float4 _FlatParticleColor;
             float _MaxDisplayVelocity;
+            float _DensityDeviationRange;
             sampler2D _ColorGradientTex;
+            sampler2D _DensityColorGradientTex;
 
             float4 _LightColor;
             float3 _LightDirection;
@@ -36,6 +41,7 @@ Shader "Custom/FluidParticle3D"{
             // Structured buffers (Per instance data)
             StructuredBuffer<float3> Positions;
             StructuredBuffer<float3> Velocities;
+            StructuredBuffer<float> Densities;
 
             struct MeshData {
                 float4 vertex : POSITION;
@@ -48,6 +54,7 @@ Shader "Custom/FluidParticle3D"{
                 float3 worldNormal : TEXCOORD0;
                 float4 meshVertexPos : TEXCOORD1;
                 float velocityMagnitude : TEXCOORD2;
+                float density : TEXCOORD3;
             };
 
 
@@ -63,6 +70,7 @@ Shader "Custom/FluidParticle3D"{
 
                 // Coloring options
                 o.velocityMagnitude = length(Velocities[instanceID]);
+                o.density = Densities[instanceID];
 
                 return o;
             }
@@ -83,17 +91,22 @@ Shader "Custom/FluidParticle3D"{
                     float t_color = inverseLerp(0, _MaxDisplayVelocity, i.velocityMagnitude);
                     finalColor = tex2D(_ColorGradientTex, float2(t_color, 0.5));
                 }
+                else if (_ColoringMode == 2) { // Density deviation
+                    float t_color = inverseLerp(0.0, _DensityDeviationRange, i.density);
+                    finalColor = tex2D(_DensityColorGradientTex, float2(t_color, 0.5));
+                }
 
                 // If lambert illumination activated
                 if (_UseLambertIllumination == 1) {
+                    float3 colorBeforeLambert = finalColor.rgb;
                     float3 lightDir = normalize(_LightDirection);
                     float3 normal = normalize(i.worldNormal);
 
                     float lambert = max(0, dot(normal, lightDir));
                     float3 diffuse = lambert * _LightColor.rgb;
-                    float3 ambientLight = float3(0.05, 0.05, 0.05);
+                    float3 ambientLight = float3(0.25, 0.25, 0.25);
 
-                    float3 illuminatedColor = finalColor * diffuse + ambientLight;
+                    float3 illuminatedColor = colorBeforeLambert * diffuse + ambientLight * colorBeforeLambert;
                     
                     finalColor =  float4(illuminatedColor.rgb, 1.0);
                 }

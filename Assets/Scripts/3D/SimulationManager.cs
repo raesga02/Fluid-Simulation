@@ -26,7 +26,7 @@ namespace _3D {
         [Header("References")]
         [SerializeField] FluidSpawnerManager fluidSpawner;
         [SerializeField] FluidColliderManager fluidColliderManager;
-        [SerializeField] FluidUpdater fluidUpdater;
+        [SerializeField] public FluidUpdater fluidUpdater;
         [SerializeField] FluidRenderer fluidRenderer;
 
         // Compute buffers

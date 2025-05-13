@@ -13,7 +13,7 @@ namespace _3D {
         [SerializeField, Min(0.0001f)] float smoothingLength;
 
         [Header("Pressure Force Settings")]
-        [SerializeField, Min(0f)] float restDensity;
+        [SerializeField, Min(0f)] public float restDensity;
         [SerializeField, Min(0f)] float bulkModulus;
 
         [Header("Viscosity Force Settings")]
