@@ -2,6 +2,7 @@ Shader "Custom/FluidParticle3D"{
     Properties {
         _DisplaySize ("Display Size", Float) = 1.0
         _ColoringMode ("Coloring Mode", Integer) = 1
+        _UseLambertIllumination("Use Lambert Illumination", Integer) = 0
         _FlatParticleColor ("Flat Particle Color", Color) = (0.1, 0.3, 1, 1)
         _MaxDisplayVelocity ("Max Display Velocity", Float) = 20.0
         _ColorGradientTex ("Color Gradient Texture", 2D) = "white" {}
@@ -24,6 +25,7 @@ Shader "Custom/FluidParticle3D"{
             // Shader properties (Common data)
             float _DisplaySize;
             int _ColoringMode;
+            int _UseLambertIllumination;
             float4 _FlatParticleColor;
             float _MaxDisplayVelocity;
             sampler2D _ColorGradientTex;
@@ -72,28 +74,31 @@ Shader "Custom/FluidParticle3D"{
 
             float4 frag (Interpolators i) : SV_Target {
 
+                float4 finalColor = float4(0.0, 0.0, 0.0, 1.0);
+
                 if (_ColoringMode == 0) { // Flat color
-                    return float4(_FlatParticleColor.rgb, 1.0);
+                    finalColor = float4(_FlatParticleColor.rgb, 1.0);
                 }
                 else if (_ColoringMode == 1) {   // Velocity field gradient
                     float t_color = inverseLerp(0, _MaxDisplayVelocity, i.velocityMagnitude);
-                    return tex2D(_ColorGradientTex, float2(t_color, 0.5));
+                    finalColor = tex2D(_ColorGradientTex, float2(t_color, 0.5));
                 }
-                else if (_ColoringMode == 2) {
+
+                // If lambert illumination activated
+                if (_UseLambertIllumination == 1) {
                     float3 lightDir = normalize(_LightDirection);
                     float3 normal = normalize(i.worldNormal);
 
                     float lambert = max(0, dot(normal, lightDir));
                     float3 diffuse = lambert * _LightColor.rgb;
-                    float3 ambientLight = float3(0.1, 0.1, 0.1);
+                    float3 ambientLight = float3(0.05, 0.05, 0.05);
 
-                    float3 finalColor = _FlatParticleColor * diffuse + ambientLight;
+                    float3 illuminatedColor = finalColor * diffuse + ambientLight;
                     
-                    return float4(finalColor.rgb, _FlatParticleColor.a);
+                    finalColor =  float4(illuminatedColor.rgb, 1.0);
                 }
-                
 
-                return float4(0.0, 0.0, 0.0, 1.0);
+                return finalColor;
             }
             
             ENDCG

@@ -20,6 +20,7 @@ namespace _3D {
         [SerializeField] bool resetPending;
 
         [Header("Display Settings")]
+        [SerializeField] public bool isActive = true;
         [SerializeField] bool drawBounds;
         [SerializeField] bool drawSamplePoints;
         [SerializeField, Range(0.02f, 0.75f)] float sampleScale;
@@ -159,6 +160,8 @@ namespace _3D {
         }
 
         void Update() {
+            if (!isActive) { return;}
+
             if (resetPending) { ResetDisplay(); }
             UpdateSettings();
 

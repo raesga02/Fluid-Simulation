@@ -65,6 +65,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints:
     - _ColoringMode: 1
+    - _UseLambertIllumination: 1
     m_Floats:
     - _BlendFactor: 0
     - _BumpScale: 1
@@ -90,7 +91,7 @@ Material:
     m_Colors:
     - _Color: {r: 0.19691172, g: 0.3532211, b: 0.7075472, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FlatParticleColor: {r: 0.10679956, g: 0.6383551, b: 0.9056604, a: 0}
+    - _FlatParticleColor: {r: 0.10679956, g: 0.6383551, b: 0.9056604, a: 1}
     - _LightColor: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
     - _LightDirection: {r: 0.3213938, g: 0.76604444, b: -0.5566705, a: 0}
   m_BuildTextureStacks: []

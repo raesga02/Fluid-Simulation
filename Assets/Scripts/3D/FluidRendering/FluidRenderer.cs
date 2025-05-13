@@ -3,10 +3,14 @@ using UnityEngine;
 
 namespace _3D {
 
+    public enum VisualizationMode {
+        Particles,
+        Surface
+    }
+
     public enum ColoringMode {
         FlatColor,
         VelocityMagnitude,
-        Lambert
     }
 
     public class FluidRenderer : MonoBehaviour {
@@ -17,19 +21,19 @@ namespace _3D {
         [SerializeField] bool independentSizing = false;
 
         [Header("Coloring Mode Parameters")]
+        [SerializeField] VisualizationMode visualizationMode = VisualizationMode.Particles;
         [SerializeField] ColoringMode colorMode;
         [SerializeField] Color flatParticleColor;
         [SerializeField] Gradient colorGradient;
         [SerializeField, Range(0f, 1f)] float blendFactor = 1.0f;
         [SerializeField, Min(0.0f)] float maxDisplayVelocity = 20.0f;
+        [SerializeField] bool useLambertIllumination = false;
 
         [Header("References")]
         [SerializeField] Mesh particleMesh;
         [SerializeField] Material particleMaterial;
         [SerializeField] Light sceneLight;
         [SerializeField] MarchingCubesDisplay marchingCubesDisplay;
-        
-        public bool drawParticles = true;
 
         // Private fields
         SimulationManager manager;
@@ -42,10 +46,6 @@ namespace _3D {
             manager = SimulationManager.Instance;
             SetBuffers();
             UpdateSettings();
-            InitializeMarchingCubes();
-        }
-
-        private void InitializeMarchingCubes() {
             marchingCubesDisplay.Init();
         }
 
@@ -69,6 +69,7 @@ namespace _3D {
             particleMaterial.SetFloat("_DisplaySize", independentSizing ? independentDisplaySize : manager.particleRadius * displaySizeMultiplier);
             particleMaterial.SetFloat("_BlendFactor", blendFactor);
             particleMaterial.SetInteger("_ColoringMode", colorMode.GetHashCode());
+            particleMaterial.SetInteger("_UseLambertIllumination", useLambertIllumination ? 1 : 0);
             particleMaterial.SetColor("_FlatParticleColor", flatParticleColor);
             particleMaterial.SetFloat("_MaxDisplayVelocity", maxDisplayVelocity);
             particleMaterial.SetTexture("_ColorGradientTex", GetTex2DFromGradient());
@@ -82,7 +83,7 @@ namespace _3D {
         }
 
         void RenderIndirect() {
-            if (!drawParticles) { return;}
+            if (visualizationMode != VisualizationMode.Particles) { return;}
             Graphics.DrawMeshInstancedIndirect(particleMesh, 0, particleMaterial, bounds, argsBuffer);
         }
 
@@ -102,6 +103,8 @@ namespace _3D {
 
         public void OnValidate() {
             needsUpdate = true;
+
+            marchingCubesDisplay.isActive = visualizationMode == VisualizationMode.Surface;
         }
 
         void OnDestroy() {
