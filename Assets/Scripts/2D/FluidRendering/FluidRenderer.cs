@@ -4,7 +4,8 @@ namespace _2D {
 
     public enum ColoringMode {
         FlatColor,
-        VelocityMagnitude
+        VelocityMagnitude,
+        DensityDeviation,
     }
 
     public class FluidRenderer : MonoBehaviour {
@@ -19,8 +20,10 @@ namespace _2D {
         [SerializeField] ColoringMode colorMode;
         [SerializeField] Color flatParticleColor;
         [SerializeField] Gradient colorGradient;
+        [SerializeField] Gradient densityColorGradient;
         [SerializeField, Range(0f, 1f)] float blendFactor = 1.0f;
         [SerializeField, Min(0.0f)] float maxDisplayVelocity = 20.0f;
+        [SerializeField, Min(0.0f)] float densityDeviationRange = 20.0f;
 
         [Header("References")]
         [SerializeField] Mesh particleMesh;
@@ -42,6 +45,7 @@ namespace _2D {
         void SetBuffers() {
             particleMaterial.SetBuffer("Positions", manager.positionsBuffer);
             particleMaterial.SetBuffer("Velocities", manager.velocitiesBuffer);
+            particleMaterial.SetBuffer("Densities", manager.densitiesBuffer);
         }
 
         void UpdateSettings() {
@@ -57,7 +61,10 @@ namespace _2D {
                 particleMaterial.SetInteger("_ColoringMode", colorMode.GetHashCode());
                 particleMaterial.SetColor("_FlatParticleColor", flatParticleColor);
                 particleMaterial.SetFloat("_MaxDisplayVelocity", maxDisplayVelocity);
-                particleMaterial.SetTexture("_ColorGradientTex", GetTex2DFromGradient());
+                particleMaterial.SetFloat("_DensityDeviationRange", densityDeviationRange);
+                particleMaterial.SetTexture("_ColorGradientTex", GetTex2DFromGradient(colorGradient));
+                particleMaterial.SetTexture("_DensityColorGradientTex", GetTex2DFromGradient(densityColorGradient));
+                particleMaterial.SetFloat("_RestDensity", manager.fluidUpdater.restDensity);
 
                 needsUpdate = false;
             }
@@ -72,7 +79,7 @@ namespace _2D {
             Graphics.DrawMeshInstancedIndirect(particleMesh, 0, particleMaterial, bounds, argsBuffer);
         }
 
-        Texture2D GetTex2DFromGradient() {
+        Texture2D GetTex2DFromGradient(Gradient colorGradient) {
             int resolution = 256;
             Texture2D texture = new Texture2D(resolution, 1, TextureFormat.RGBA32, false);
             texture.wrapMode =  TextureWrapMode.Clamp;

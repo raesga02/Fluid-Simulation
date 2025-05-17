@@ -31,6 +31,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _DensityColorGradientTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -64,12 +68,13 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints:
-    - _ColoringMode: 1
+    - _ColoringMode: 2
     m_Floats:
     - _BlendFactor: 0
     - _BumpScale: 1
     - _ColoringMode: 1
     - _Cutoff: 0.5
+    - _DensityDeviationRange: 100
     - _DetailNormalMapScale: 1
     - _DisplaySize: 0.2
     - _DstBlend: 0
@@ -81,6 +86,7 @@ Material:
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
+    - _RestDensity: 800
     - _ScaleFactor: 0.35
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
