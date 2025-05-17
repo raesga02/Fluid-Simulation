@@ -19,7 +19,7 @@ namespace _3D {
         [SerializeField] AABB aabb;
 
         // Private fields
-        bool needsUpdate = true;
+        public bool needsUpdate = true;
 
         private void Update() {
             UpdateSettings();

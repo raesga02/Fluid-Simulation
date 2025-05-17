@@ -68,6 +68,7 @@ namespace _3D {
         public void UpdateColliders() {
             colliders = GetComponentsInChildren<FluidCollider>();
             foreach (FluidCollider collider in colliders) {
+                collider.needsUpdate = true;
                 collider.solidColliderColor = solidColliderColor;
                 collider.hollowColliderColor = hollowColliderColor;
             }

@@ -18,7 +18,7 @@ namespace _2D {
         [SerializeField] Mesh mesh = null;
         [SerializeField] AABB minAABB;
 
-        bool needsUpdate = true;
+        public bool needsUpdate = true;
 
 
         public (Vector2[] vertices, Vector2[] normals, AABB aabb) GetData() {
