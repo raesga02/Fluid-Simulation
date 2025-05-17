@@ -68,14 +68,14 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints:
-    - _ColoringMode: 1
+    - _ColoringMode: 2
     - _UseLambertIllumination: 1
     m_Floats:
     - _BlendFactor: 0
     - _BumpScale: 1
     - _ColoringMode: 1
     - _Cutoff: 0.5
-    - _DensityDeviationRange: 20
+    - _DensityDeviationRange: 10
     - _DetailNormalMapScale: 1
     - _DisplaySize: 0.5
     - _DstBlend: 0

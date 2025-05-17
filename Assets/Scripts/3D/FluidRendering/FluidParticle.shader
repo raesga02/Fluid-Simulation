@@ -34,6 +34,7 @@ Shader "Custom/FluidParticle3D"{
             float _DensityDeviationRange;
             sampler2D _ColorGradientTex;
             sampler2D _DensityColorGradientTex;
+            float _RestDensity;
 
             float4 _LightColor;
             float3 _LightDirection;
@@ -92,7 +93,7 @@ Shader "Custom/FluidParticle3D"{
                     finalColor = tex2D(_ColorGradientTex, float2(t_color, 0.5));
                 }
                 else if (_ColoringMode == 2) { // Density deviation
-                    float t_color = inverseLerp(0.0, _DensityDeviationRange, i.density);
+                    float t_color = inverseLerp(_RestDensity - _DensityDeviationRange, _RestDensity + _DensityDeviationRange, i.density);
                     finalColor = tex2D(_DensityColorGradientTex, float2(t_color, 0.5));
                 }
 
