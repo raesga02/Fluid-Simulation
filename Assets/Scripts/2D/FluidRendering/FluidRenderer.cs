@@ -17,7 +17,7 @@ namespace _2D {
         [SerializeField] bool independentSizing = false;
 
         [Header("Coloring Mode Parameters")]
-        [SerializeField] ColoringMode colorMode;
+        [SerializeField] public ColoringMode colorMode;
         [SerializeField] Color flatParticleColor;
         [SerializeField] Gradient colorGradient;
         [SerializeField] Gradient densityColorGradient;
@@ -33,7 +33,7 @@ namespace _2D {
         SimulationManager manager;
         ComputeBuffer argsBuffer;
         Bounds bounds;
-        bool needsUpdate = true;
+        public bool needsUpdate = true;
 
 
         public void Init() {

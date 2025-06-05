@@ -27,7 +27,7 @@ namespace _2D {
         [SerializeField] FluidSpawnerManager fluidSpawner;
         [SerializeField] FluidColliderManager fluidColliderManager;
         [SerializeField] public FluidUpdater fluidUpdater;
-        [SerializeField] FluidRenderer fluidRenderer;
+        [SerializeField] public FluidRenderer fluidRenderer;
 
         // Compute buffers
         public ComputeBuffer positionsBuffer { get; private set; }

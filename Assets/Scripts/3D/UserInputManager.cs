@@ -45,6 +45,7 @@ namespace _3D {
                 CheckPause();
                 CheckReset();
                 CheckSpeed();
+                CheckColoringMode();
             }
 
             UpdateImmersionState();
@@ -100,6 +101,12 @@ namespace _3D {
                 manager.simulationSpeedFactor = Mathf.Clamp(newSpeedFactor, minSpeedFactor, maxSpeedFactor);
                 manager.RequestSettingsUpdate();
             }
+        }
+
+        void CheckColoringMode() {
+            if (Input.GetKey(KeyCode.Alpha1)) { manager.fluidRenderer.colorMode = ColoringMode.FlatColor; manager.fluidRenderer.needsUpdate = true; }
+            if (Input.GetKey(KeyCode.Alpha2)) { manager.fluidRenderer.colorMode = ColoringMode.VelocityMagnitude; manager.fluidRenderer.needsUpdate = true; }
+            if (Input.GetKey(KeyCode.Alpha3)) { manager.fluidRenderer.colorMode = ColoringMode.DensityDeviation; manager.fluidRenderer.needsUpdate = true; }
         }
     }
 

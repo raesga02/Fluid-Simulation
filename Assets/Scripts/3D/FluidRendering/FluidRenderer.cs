@@ -23,7 +23,7 @@ namespace _3D {
 
         [Header("Coloring Mode Parameters")]
         [SerializeField] VisualizationMode visualizationMode = VisualizationMode.Particles;
-        [SerializeField] ColoringMode colorMode;
+        [SerializeField] public ColoringMode colorMode;
         [SerializeField] Color flatParticleColor;
         [SerializeField] Gradient colorGradient;
         [SerializeField] Gradient densityColorGradient;
@@ -42,7 +42,7 @@ namespace _3D {
         SimulationManager manager;
         ComputeBuffer argsBuffer;
         Bounds bounds;
-        bool needsUpdate = true;
+        public bool needsUpdate = true;
 
 
         public void Init() {

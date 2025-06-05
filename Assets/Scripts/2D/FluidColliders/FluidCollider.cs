@@ -19,6 +19,24 @@ namespace _2D {
         [SerializeField] AABB minAABB;
 
         public bool needsUpdate = true;
+        public MeshFilter meshFilter = null;
+        public MeshRenderer meshRenderer = null;
+        
+        private LineRenderer lineRenderer = null;
+
+        private void Awake() {
+            // Inicializa el LineRenderer si no existe
+            lineRenderer = GetComponent<LineRenderer>();
+            if (lineRenderer == null) {
+                lineRenderer = gameObject.AddComponent<LineRenderer>();
+                lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+                lineRenderer.widthMultiplier = 0.1f;
+                lineRenderer.loop = true;
+                lineRenderer.useWorldSpace = false;
+                lineRenderer.positionCount = 0;
+                lineRenderer.startColor = lineRenderer.endColor = new Color(0.15f, 0.15f, 0.15f);
+            }
+        }
 
 
         public (Vector2[] vertices, Vector2[] normals, AABB aabb) GetData() {
@@ -43,10 +61,37 @@ namespace _2D {
 
             mesh = ConvexMeshGenerator.GenerateMesh(numSides, initialAngle * Mathf.Deg2Rad);
             minAABB = ConvexMeshGenerator.GetMinimumAABB(mesh, transform.localToWorldMatrix);
+            if (meshFilter != null) {
+                meshFilter.mesh = mesh;
+            }
             needsUpdate = false;
         }
 
+        private void Update() {
+            UpdateSettings();
+            
+            if (bounceDirection == BounceDirection.OUTSIDE) {
+                meshRenderer.enabled = true;
+                lineRenderer.enabled = false;
+            }
+            else {
+                meshRenderer.enabled = false;
+                lineRenderer.enabled = true;
+            }
+
+            if (bounceDirection == BounceDirection.INSIDE) {
+                var verts = mesh.vertices;
+                lineRenderer.positionCount = verts.Length;
+                lineRenderer.enabled = true;
+
+                for (int i = 0; i < verts.Length; i++) {
+                    lineRenderer.SetPosition(i, verts[i]);
+                }
+            }
+        }
+
         private void OnDrawGizmos() {
+            if (Application.isPlaying) { return; }
             UpdateSettings();
             if (drawCollider) { DrawCollider(); }
             if (drawColliderAABB) { DrawColliderAABB(); }
@@ -55,11 +100,10 @@ namespace _2D {
         private void DrawCollider() {
             var matrix = Gizmos.matrix;
             Gizmos.matrix = transform.localToWorldMatrix;
-            Gizmos.color = Color.gray;
-
+            Gizmos.color = new Color(0.15f, 0.15f, 0.15f);
 
             if (bounceDirection == BounceDirection.OUTSIDE) {
-                Gizmos.DrawMesh(mesh);
+                // Gizmos.DrawMesh(mesh);
             }
             else {
                 Gizmos.DrawLineStrip(mesh.vertices, true);

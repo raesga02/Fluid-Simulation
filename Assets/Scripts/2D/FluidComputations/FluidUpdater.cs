@@ -7,7 +7,7 @@ namespace _2D {
         [Header("General Settings")]
         [SerializeField] int blockSize = 32;
         [SerializeField, Min(0f)] float particleMass;
-        [SerializeField] Vector2 gravity = new Vector2(0.0f, -9.81f);
+        [SerializeField] public Vector2 gravity = new Vector2(0.0f, -9.81f);
 
         [Header("Density Calculation Settings")]
         [SerializeField, Min(0.0001f)] float smoothingLength;

@@ -16,6 +16,7 @@ namespace _2D {
 
         // private fields
         SimulationManager manager;
+        Vector2 defaultGravity = Vector2.zero;
 
 
         private void Start() {
@@ -28,6 +29,8 @@ namespace _2D {
                 CheckPause();
                 CheckReset();
                 CheckSpeed();
+                CheckColoringMode();
+                CheckGravityChange();
             }
 
             UpdateImmersionState();
@@ -61,6 +64,54 @@ namespace _2D {
                 float newSpeedFactor = manager.simulationSpeedFactor + rotationDirection * speedChangeStep;
                 manager.simulationSpeedFactor = Mathf.Clamp(newSpeedFactor, minSpeedFactor, maxSpeedFactor);
                 manager.RequestSettingsUpdate();
+            }
+        }
+
+        void CheckColoringMode() {
+            if (Input.GetKey(KeyCode.Alpha1)) { manager.fluidRenderer.colorMode = ColoringMode.FlatColor; manager.fluidRenderer.needsUpdate = true; }
+            if (Input.GetKey(KeyCode.Alpha2)) { manager.fluidRenderer.colorMode = ColoringMode.VelocityMagnitude; manager.fluidRenderer.needsUpdate = true; }
+            if (Input.GetKey(KeyCode.Alpha3)) { manager.fluidRenderer.colorMode = ColoringMode.DensityDeviation; manager.fluidRenderer.needsUpdate = true; }
+        }
+
+        void CheckGravityChange() {
+            // U/J -> X axis
+            // I/K -> Y axis
+            // O/L -> Z axis
+            if (defaultGravity == Vector2.zero) {
+                defaultGravity = manager.fluidUpdater.gravity;
+            }
+
+            if (!Input.GetKey(KeyCode.G)) { return; }
+
+            Vector2 gravityDirection = Vector2.zero;
+
+
+            // Y axis
+            if (Input.GetKey(KeyCode.I)) {
+                gravityDirection += Vector2.up;
+            }
+            else if (Input.GetKey(KeyCode.K)) {
+                gravityDirection += Vector2.down;
+            }
+
+            // X axis
+            if (Input.GetKey(KeyCode.U)) {
+                gravityDirection += Vector2.right;
+            }
+            else if (Input.GetKey(KeyCode.J)) {
+                gravityDirection += Vector2.left;
+            }
+
+            // Default
+            if (gravityDirection == Vector2.zero) {
+                gravityDirection = defaultGravity;
+            }
+
+            Vector2 newGravity = gravityDirection.normalized * 9.81f;
+
+            if (newGravity != manager.fluidUpdater.gravity) {
+                manager.fluidUpdater.gravity = newGravity;
+                manager.fluidUpdater.needsUpdate = true;
             }
         }
     }

@@ -259,7 +259,7 @@ void HandleCollisions(uint3 id : SV_DispatchThreadID) {
             HollowCollisionDisplacement response = GetHollowCollisionResponse(particle, i);
             _Positions[id.x] += response.displacement;
             _Velocities[id.x] = ReflectAndDampVelocity(_Velocities[id.x], response.normal, _collisionDamping);
-            _Velocities[id.x] += response.displacement * GetVelocityAdjustment(_Velocities[id.x], response.quadrant, _gravity);
+            _Velocities[id.x] += GetVelocityAdjustment(_Velocities[id.x], response.quadrant, _gravity);
         }
     }  
 }

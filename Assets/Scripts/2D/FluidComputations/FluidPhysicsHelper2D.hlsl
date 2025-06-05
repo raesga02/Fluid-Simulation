@@ -327,7 +327,7 @@ float3 MullerLaplacianMagnitude(float r, float h) {
 //     the main simulation code.
 
 float DensityKernel(float r, float h) {
-    return Poly6(r, h);
+    return CubicSpline(r, h);
 }
 
 float3 PressureKernel(float3 r, float h) {

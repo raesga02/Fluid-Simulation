@@ -68,15 +68,15 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints:
-    - _ColoringMode: 2
+    - _ColoringMode: 1
     m_Floats:
-    - _BlendFactor: 0
+    - _BlendFactor: 0.25
     - _BumpScale: 1
     - _ColoringMode: 1
     - _Cutoff: 0.5
     - _DensityDeviationRange: 100
     - _DetailNormalMapScale: 1
-    - _DisplaySize: 0.2
+    - _DisplaySize: 0.275
     - _DstBlend: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
@@ -86,7 +86,7 @@ Material:
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _RestDensity: 800
+    - _RestDensity: 450
     - _ScaleFactor: 0.35
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -96,5 +96,5 @@ Material:
     m_Colors:
     - _Color: {r: 0.19691172, g: 0.3532211, b: 0.7075472, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FlatParticleColor: {r: 0, g: 0.37385702, b: 1, a: 0}
+    - _FlatParticleColor: {r: 0.06666667, g: 0.6509804, b: 0.89411765, a: 0}
   m_BuildTextureStacks: []

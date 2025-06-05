@@ -127,8 +127,8 @@ CollisionDisplacement GetSolidCollisionResponse(ParticleCollider particle, int c
 
 float2 GetVelocityAdjustment(float2 velocity, float2 quadrant, float2 gravity) {
     float2 isGravityOnAxis = step(abs(gravity), float2(0.0, 0.0));
-    float2 isVelocitySmall = abs(velocity) < 0.001;
-    return - isGravityOnAxis * isVelocitySmall * quadrant * 0.1;
+    float2 isVelocitySmall = abs(velocity) < 0.005;
+    return - isGravityOnAxis * isVelocitySmall * quadrant * 0.01;
 }
 
 HollowCollisionDisplacement GetHollowCollisionResponse(ParticleCollider particle, int colliderIdx) {
