@@ -26,6 +26,7 @@ namespace _3D {
         // private fields
         SimulationManager manager;
         Camera mainCamera;
+        Vector3 defaultGravity = Vector3.zero;
 
 
         private void Start() {
@@ -46,6 +47,7 @@ namespace _3D {
                 CheckReset();
                 CheckSpeed();
                 CheckColoringMode();
+                CheckGravityChange();
             }
 
             UpdateImmersionState();
@@ -108,6 +110,55 @@ namespace _3D {
             if (Input.GetKey(KeyCode.Alpha2)) { manager.fluidRenderer.colorMode = ColoringMode.VelocityMagnitude; manager.fluidRenderer.needsUpdate = true; }
             if (Input.GetKey(KeyCode.Alpha3)) { manager.fluidRenderer.colorMode = ColoringMode.DensityDeviation; manager.fluidRenderer.needsUpdate = true; }
         }
-    }
 
+        private void CheckGravityChange() {
+            // U/J -> X axis
+            // I/K -> Y axis
+            // O/L -> Z axis
+            if (defaultGravity == Vector3.zero) {
+                defaultGravity = manager.fluidUpdater.gravity;
+            }
+
+            if (!Input.GetKey(KeyCode.G)) { return; }
+
+            Vector3 gravityDirection = Vector3.zero;
+
+
+            // Y axis
+            if (Input.GetKey(KeyCode.I)) {
+                gravityDirection += Vector3.up;
+            }
+            else if (Input.GetKey(KeyCode.K)) {
+                gravityDirection += Vector3.down;
+            }
+
+            // X axis
+            if (Input.GetKey(KeyCode.U)) {
+                gravityDirection += Vector3.right;
+            }
+            else if (Input.GetKey(KeyCode.J)) {
+                gravityDirection += Vector3.left;
+            }
+
+            // Z axis
+            if (Input.GetKey(KeyCode.O)) {
+                gravityDirection += Vector3.forward;
+            }
+            else if (Input.GetKey(KeyCode.L)) {
+                gravityDirection += Vector3.back;
+            }
+
+            // Default
+            if (gravityDirection == Vector3.zero) {
+                gravityDirection = defaultGravity;
+            }
+
+            Vector3 newGravity = gravityDirection.normalized * 9.81f;
+
+            if (newGravity != manager.fluidUpdater.gravity) {
+                manager.fluidUpdater.gravity = newGravity;
+                manager.fluidUpdater.needsUpdate = true;
+            }
+        }
+    }
 }

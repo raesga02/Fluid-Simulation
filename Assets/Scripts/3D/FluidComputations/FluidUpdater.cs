@@ -7,7 +7,7 @@ namespace _3D {
         [Header("General Settings")]
         [SerializeField] int blockSize = 32;
         [SerializeField, Min(0f)] float particleMass;
-        [SerializeField] Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
+        [SerializeField] public Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
 
         [Header("Density Calculation Settings")]
         [SerializeField, Min(0.0001f)] float smoothingLength;
