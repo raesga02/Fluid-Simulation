@@ -18,8 +18,33 @@ namespace _3D {
         [SerializeField] Mesh mesh = null;
         [SerializeField] AABB aabb;
 
+        private LineRenderer lineRenderer = null;
+
+
         // Private fields
         public bool needsUpdate = true;
+
+        private void Start() {
+            Debug.Log("AAA");
+            aabb = ColliderMeshGenerator.GetMinimumAABB(mesh, transform.localToWorldMatrix);
+            Debug.Log("BBBB");
+
+            lineRenderer = GetComponent<LineRenderer>();
+            if (lineRenderer == null) {
+                lineRenderer = gameObject.AddComponent<LineRenderer>();
+            }
+
+            lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+            lineRenderer.startColor = lineRenderer.endColor = Color.black;
+            lineRenderer.loop = false;
+            lineRenderer.useWorldSpace = true;
+            lineRenderer.startWidth = 0.2f;
+            lineRenderer.endWidth = 0.2f;
+
+            Vector3[] points = GetWireCubePoints();
+            lineRenderer.positionCount = points.Length;
+            lineRenderer.SetPositions(points);
+        }
 
         private void Update() {
             UpdateSettings();
@@ -29,9 +54,13 @@ namespace _3D {
 
             meshRenderer.enabled = bounceDirection == BounceDirection.OUTSIDE;
 
+            if (lineRenderer != null) {
+                lineRenderer.enabled = bounceDirection == BounceDirection.INSIDE;
+            }
+
             material.SetColor("_MainColor", solidColliderColor);
             material.SetColor("_LightColor", sceneLight.color * sceneLight.intensity);
-            material.SetVector("_LightDirection", - sceneLight.transform.forward);
+            material.SetVector("_LightDirection", -sceneLight.transform.forward);
         }
 
         public ColliderData GetData() {
@@ -54,9 +83,39 @@ namespace _3D {
         private void UpdateSettings() {
             if (!needsUpdate) { return; }
 
+            Vector3[] points = GetWireCubePoints();
+            if (lineRenderer != null) {
+                lineRenderer.SetPositions(points);
+            }
+
             mesh = ColliderMeshGenerator.GenerateMesh();
             aabb = ColliderMeshGenerator.GetMinimumAABB(mesh, transform.localToWorldMatrix);
             needsUpdate = false;
+        }
+
+        Vector3[] GetWireCubePoints()
+        {
+            Vector3 size = aabb.max - aabb.min;
+            Vector3 centre = aabb.min + size * 0.5f;
+            Vector3 half = size * 0.5f;
+
+            // 8 corners of the cube
+            Vector3 p0 = centre + new Vector3(-half.x, -half.y, -half.z);
+            Vector3 p1 = centre + new Vector3(half.x, -half.y, -half.z);
+            Vector3 p2 = centre + new Vector3(half.x, -half.y, half.z);
+            Vector3 p3 = centre + new Vector3(-half.x, -half.y, half.z);
+            Vector3 p4 = centre + new Vector3(-half.x, half.y, -half.z);
+            Vector3 p5 = centre + new Vector3(half.x, half.y, -half.z);
+            Vector3 p6 = centre + new Vector3(half.x, half.y, half.z);
+            Vector3 p7 = centre + new Vector3(-half.x, half.y, half.z);
+
+            // 12 edges (24 points)
+            return new Vector3[]
+            {
+                p0, p1, p1, p2, p2, p3, p3, p0, // bottom square
+                p0, p4, p4, p5, p5, p6, p6, p7, p7, p4, // top square
+                p4, p5, p5, p1, p1, p2, p2, p6, p6, p7, p7, p3 // Vertical lines
+            };
         }
 
         private void OnDrawGizmos() {
@@ -66,11 +125,9 @@ namespace _3D {
         }
 
         private void DrawColliderAABB() {
-            aabb = ColliderMeshGenerator.GetMinimumAABB(mesh, transform.localToWorldMatrix);
-
             Vector3 size = aabb.max - aabb.min;
             Vector3 centre = aabb.min + size * 0.5f;
-            Gizmos.color = Color.white;
+            Gizmos.color = Color.red;
             Gizmos.DrawWireCube(centre, size);
         }
     }
