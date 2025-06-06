@@ -6,15 +6,15 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: Assets/Scenes/Test/TestMarchingCubes.unity
-    guid: 7c6a3e6212b6d7e4db271729833be661
-  - enabled: 0
     path: Assets/Scenes/Simulation3D.unity
     guid: 780af9142341cff44932dcdd85dff0f6
   - enabled: 0
     path: Assets/Scenes/Thesis/Scene1.unity
     guid: 280cdc2bee9c543c8a52dd1e7b31b844
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Thesis/Scene2.unity
     guid: e083df56e147849228e9518fd063aa9f
+  - enabled: 1
+    path: Assets/Scenes/Thesis/Scene3.unity
+    guid: a3ba9a2e8e7a54bfab6a3a5e2e251c6b
   m_configObjects: {}
