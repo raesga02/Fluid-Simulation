@@ -115,7 +115,7 @@ namespace _2D {
         private void DrawColliderAABB() {
             Vector2 size = minAABB.max - minAABB.min;
             Vector2 centre = minAABB.min + size * 0.5f;
-            Gizmos.color = Color.white;
+            Gizmos.color = Color.red;
             Gizmos.DrawWireCube(centre, size);
         }
     }
