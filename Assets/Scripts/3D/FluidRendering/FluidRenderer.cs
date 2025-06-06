@@ -22,7 +22,7 @@ namespace _3D {
         [SerializeField] bool independentSizing = false;
 
         [Header("Coloring Mode Parameters")]
-        [SerializeField] VisualizationMode visualizationMode = VisualizationMode.Particles;
+        [SerializeField] public VisualizationMode visualizationMode = VisualizationMode.Particles;
         [SerializeField] public ColoringMode colorMode;
         [SerializeField] Color flatParticleColor;
         [SerializeField] Gradient colorGradient;
@@ -59,6 +59,7 @@ namespace _3D {
         }
 
         void UpdateSettings() {
+            marchingCubesDisplay.isActive = visualizationMode == VisualizationMode.Surface;
             particleMaterial.SetColor("_LightColor", sceneLight.color * sceneLight.intensity);
             particleMaterial.SetVector("_LightDirection", - sceneLight.transform.forward);
 

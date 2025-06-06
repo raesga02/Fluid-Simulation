@@ -106,9 +106,25 @@ namespace _3D {
         }
 
         void CheckColoringMode() {
-            if (Input.GetKey(KeyCode.Alpha1)) { manager.fluidRenderer.colorMode = ColoringMode.FlatColor; manager.fluidRenderer.needsUpdate = true; }
-            if (Input.GetKey(KeyCode.Alpha2)) { manager.fluidRenderer.colorMode = ColoringMode.VelocityMagnitude; manager.fluidRenderer.needsUpdate = true; }
-            if (Input.GetKey(KeyCode.Alpha3)) { manager.fluidRenderer.colorMode = ColoringMode.DensityDeviation; manager.fluidRenderer.needsUpdate = true; }
+            // Surface display
+            if (Input.GetKey(KeyCode.Alpha4)) {
+                manager.fluidRenderer.visualizationMode = VisualizationMode.Surface;
+            }
+            // Particle based display methods
+            else {
+                if (Input.GetKey(KeyCode.Alpha1)) { 
+                    manager.fluidRenderer.visualizationMode = VisualizationMode.Particles;
+                    manager.fluidRenderer.colorMode = ColoringMode.FlatColor; manager.fluidRenderer.needsUpdate = true; 
+                }
+                if (Input.GetKey(KeyCode.Alpha2)) { 
+                    manager.fluidRenderer.visualizationMode = VisualizationMode.Particles;
+                    manager.fluidRenderer.colorMode = ColoringMode.VelocityMagnitude; manager.fluidRenderer.needsUpdate = true; 
+                }
+                if (Input.GetKey(KeyCode.Alpha3)) { 
+                    manager.fluidRenderer.visualizationMode = VisualizationMode.Particles;
+                    manager.fluidRenderer.colorMode = ColoringMode.DensityDeviation; manager.fluidRenderer.needsUpdate = true; 
+                }
+            }
         }
 
         private void CheckGravityChange() {
