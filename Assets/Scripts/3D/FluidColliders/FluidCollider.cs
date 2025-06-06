@@ -25,9 +25,7 @@ namespace _3D {
         public bool needsUpdate = true;
 
         private void Start() {
-            Debug.Log("AAA");
             aabb = ColliderMeshGenerator.GetMinimumAABB(mesh, transform.localToWorldMatrix);
-            Debug.Log("BBBB");
 
             lineRenderer = GetComponent<LineRenderer>();
             if (lineRenderer == null) {
